@@ -1,0 +1,146 @@
+# This AWS SAM template has been generated from your function's configuration. If
+# your function has one or more triggers, note that the AWS resources associated
+# with these triggers aren't fully specified in this template and include
+# placeholder values. Open this template in AWS Infrastructure Composer or your
+# favorite IDE and modify it to specify a serverless application with other AWS
+# resources.
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Serverless Application Model template describing your function.
+Resources:
+  SELComprehendAnalyzer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+      Description: ''
+      MemorySize: 1024
+      Timeout: 30
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      EphemeralStorage:
+        Size: 512
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 21600
+        MaximumRetryAttempts: 2
+      PackageType: Zip
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource:
+                - !GetAtt Bucket1.Arn
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource:
+                - !GetAtt SELComprehendAnalyzer.Arn
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource:
+                - !GetAtt Bucket1.Arn
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+              Resource: arn:aws:logs:us-east-1:089580247707:*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource:
+                - >-
+                  arn:aws:logs:us-east-1:089580247707:log-group:/aws/lambda/SEL-Comprehend-Analyzer:*
+            - Effect: Allow
+              Action:
+                - comprehend:DetectDominantLanguage
+                - comprehend:BatchDetectDominantLanguage
+                - comprehend:DetectEntities
+                - comprehend:BatchDetectEntities
+                - comprehend:DetectKeyPhrases
+                - comprehend:BatchDetectKeyPhrases
+                - comprehend:DetectPiiEntities
+                - comprehend:ContainsPiiEntities
+                - comprehend:DetectSentiment
+                - comprehend:BatchDetectSentiment
+                - comprehend:DetectSyntax
+                - comprehend:BatchDetectSyntax
+                - comprehend:ClassifyDocument
+                - comprehend:DescribeTopicsDetectionJob
+                - comprehend:ListTopicsDetectionJobs
+                - comprehend:DescribeDominantLanguageDetectionJob
+                - comprehend:ListDominantLanguageDetectionJobs
+                - comprehend:DescribeEntitiesDetectionJob
+                - comprehend:ListEntitiesDetectionJobs
+                - comprehend:DescribeKeyPhrasesDetectionJob
+                - comprehend:ListKeyPhrasesDetectionJobs
+                - comprehend:DescribePiiEntitiesDetectionJob
+                - comprehend:ListPiiEntitiesDetectionJobs
+                - comprehend:DescribeSentimentDetectionJob
+                - comprehend:DescribeTargetedSentimentDetectionJob
+                - comprehend:ListSentimentDetectionJobs
+                - comprehend:ListTargetedSentimentDetectionJobs
+                - comprehend:DescribeDocumentClassifier
+                - comprehend:ListDocumentClassifiers
+                - comprehend:DescribeDocumentClassificationJob
+                - comprehend:ListDocumentClassificationJobs
+                - comprehend:DescribeEntityRecognizer
+                - comprehend:ListEntityRecognizers
+                - comprehend:ListTagsForResource
+                - comprehend:DescribeEndpoint
+                - comprehend:ListEndpoints
+                - comprehend:ListDocumentClassifierSummaries
+                - comprehend:ListEntityRecognizerSummaries
+                - comprehend:DescribeResourcePolicy
+              Resource: '*'
+      RecursiveLoop: Terminate
+      SnapStart:
+        ApplyOn: None
+      Events:
+        BucketEvent1:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: Bucket1
+            Events:
+              - s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: sel-output/raw_text/
+                  - Name: suffix
+                    Value: .txt
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+  Bucket1:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  BucketPolicy1:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: Bucket1
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Effect: Deny
+            Principal: '*'
+            Resource:
+              - arn:aws:s3:::Bucket1/*
+              - arn:aws:s3:::Bucket1
+            Condition:
+              Bool:
+                aws:SecureTransport: false

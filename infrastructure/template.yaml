@@ -1,0 +1,295 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SEL Learning Platform - Serverless Infrastructure
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 512
+    Runtime: python3.12
+    Environment:
+      Variables:
+        UPLOAD_BUCKET: !Ref UploadBucket
+        PROCESSED_BUCKET: !Ref ProcessedBucket
+        MEMORY_TABLE: !Ref LTMMemoryTable
+        ANALYTICS_TABLE: !Ref AnalyticsTable
+        SNS_TOPIC: !Ref NotificationTopic
+
+Resources:
+  # S3 Buckets
+  UploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sel-platform-uploads-${AWS::AccountId}'
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: ['*']
+            AllowedMethods: [GET, PUT, POST]
+            AllowedHeaders: ['*']
+
+  ProcessedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sel-platform-processed-${AWS::AccountId}'
+
+  # DynamoDB Tables
+  LTMMemoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: sel-ltm-memory
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: student_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: student_id
+          KeyType: HASH
+
+  AnalyticsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: sel-ltm-memory-analytics
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: student_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: student_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+
+  JobStatusTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: sel-job-status
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: job_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: job_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # SNS Topic
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: sel-notifications
+
+  # SQS Queue
+  JobQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: sel-jobs
+      VisibilityTimeout: 300
+
+  # Lambda Functions
+  S3HandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/s3-handler/src/
+      Handler: lambda_function.lambda_handler
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - S3WritePolicy:
+            BucketName: !Ref ProcessedBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - textract:StartDocumentTextDetection
+                - textract:GetDocumentTextDetection
+              Resource: '*'
+
+  TextractProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/textract-processor/src/
+      Handler: lambda_function.lambda_handler
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - S3WritePolicy:
+            BucketName: !Ref ProcessedBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - textract:*
+              Resource: '*'
+
+  TextCleanerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/text-cleaner/src/
+      Handler: lambda_function.lambda_handler
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ProcessedBucket
+        - S3WritePolicy:
+            BucketName: !Ref ProcessedBucket
+
+  ComprehendAnalyzerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/comprehend-analyzer/src/
+      Handler: lambda_function.lambda_handler
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ProcessedBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - comprehend:DetectSentiment
+                - comprehend:DetectEntities
+              Resource: '*'
+
+  TranscribeProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/transcribe-processor/src/
+      Handler: lambda_function.lambda_handler
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - transcribe:StartTranscriptionJob
+                - transcribe:GetTranscriptionJob
+              Resource: '*'
+
+  StoryGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/story-generator/src/
+      Handler: sel_story_generator.lambda_handler
+      Timeout: 600
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref LTMMemoryTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobStatusTable
+        - S3WritePolicy:
+            BucketName: !Ref ProcessedBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: '*'
+
+  QuizGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/quiz-generator/src/
+      Handler: lambda_function.lambda_handler
+      Timeout: 600
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ProcessedBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobStatusTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: '*'
+
+  LessonPlannerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/lesson-planner/src/
+      Handler: lambda_function.lambda_handler
+      Timeout: 600
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ProcessedBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobStatusTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: '*'
+
+  StatusCheckerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/status-checker/src/
+      Handler: lambda_function.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobStatusTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /status/{job_id}
+            Method: get
+
+  ContentOrchestratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/lambdas/content-orchestrator/src/
+      Handler: lambda_function.lambda_handler
+      Timeout: 900
+      Environment:
+        Variables:
+          STORY_FUNCTION: !Ref StoryGeneratorFunction
+          QUIZ_FUNCTION: !Ref QuizGeneratorFunction
+          LESSON_FUNCTION: !Ref LessonPlannerFunction
+          JOB_STATUS_TABLE: !Ref JobStatusTable
+      Policies:
+        - S3FullAccessPolicy:
+            BucketName: !Ref UploadBucket
+        - S3FullAccessPolicy:
+            BucketName: !Ref ProcessedBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LTMMemoryTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalyticsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobStatusTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - textract:*
+                - comprehend:*
+                - transcribe:*
+                - bedrock:InvokeModel
+                - sns:Publish
+                - sqs:SendMessage
+                - lambda:InvokeFunction
+              Resource: '*'
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /orchestrate
+            Method: post
+
+Outputs:
+  UploadBucketName:
+    Description: S3 bucket for uploads
+    Value: !Ref UploadBucket
+  
+  ProcessedBucketName:
+    Description: S3 bucket for processed content
+    Value: !Ref ProcessedBucket
+  
+  ApiEndpoint:
+    Description: API Gateway endpoint
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/'
+  
+  LTMTableName:
+    Description: DynamoDB table for long-term memory
+    Value: !Ref LTMMemoryTable
+  
+  AnalyticsTableName:
+    Description: DynamoDB table for analytics
+    Value: !Ref AnalyticsTable

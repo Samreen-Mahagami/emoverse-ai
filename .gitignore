@@ -1,0 +1,153 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+mvenv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# AWS
+.aws/
+*.pem
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Node modules (if any)
+node_modules/
+
+# SAM
+.aws-sam/
+samconfig.toml.bak
+
+# Documentation and internal files (not needed for deployment)
+WORKFLOW_DIAGRAM.md
+BUDGET_OPTIMIZATION_30_DAYS.md
+FINAL_CHECKLIST.md
+TEST_APP_NOW.md
+DEPLOYMENT_COMPARISON.md
+FEATURES_VERIFICATION.md
+DEPLOY_PRODUCTION_NOW.md
+DEPLOY_ECS_FOR_50_USERS.md
+STREAMLIT_RAM_ANALYSIS.md
+TESTING_RESULTS.md
+HACKATHON_DEPLOY_CHECKLIST.md
+README_HACKATHON.md
+README_FINAL.md
+SERVERLESS_FRONTEND_DEPLOY.md
+DEPLOY_REAL_PRODUCTION.md
+FINAL_DEPLOY_GUIDE.md
+DEPLOY_NOW.md
+DEPLOY_SERVERLESS_LAMBDA.md
+DEPLOY_TO_STREAMLIT_CLOUD.md
+ACTUAL_WORKFLOW_GUIDE.md
+DEPLOY_STREAMLIT_CLOUD.md
+REAL_VS_DEMO_MODE.md
+PRODUCTION_MODE_ONLY.md
+DEPLOY_OPTIONS.md
+TEST_PRODUCTION_STEP_BY_STEP.md
+INTEGRATIONS_COMPLETE.md
+REAL_PRODUCTION_READY.md
+SYSTEM_DIAGRAM.md
+README_INTEGRATION.md
+INTEGRATION_SUCCESS.md
+QUICK_REFERENCE.md
+START_HERE.md
+PRODUCTION_READY.md
+INTEGRATE_YOUR_FRONTEND.md
+FRONTEND_OPTIONS.md
+HACKATHON_DEPLOYMENT.md
+DEPLOYMENT_READY.md
+AWS_DEPLOYMENT_SUCCESS.md
+FINAL_DEPLOYMENT_SUMMARY.md
+FRONTEND_INTEGRATION_COMPLETE.md
+ASYNC_PATTERN_COMPLETE.md
+PRODUCTION_READY_GUIDE.md
+PRODUCTION_ASYNC_SOLUTION.md
+INTEGRATION_VERIFICATION.md
+FEATURES_IMPLEMENTED.md
+COMPLETE_COST_BREAKDOWN.md
+PRODUCTION_DEPLOYMENT.md
+SERVERLESS_DEPLOYMENT.md
+INTEGRATION_COMPLETE.md
+FRONTEND_IMPROVEMENTS.md
+COST_OPTIMIZATION.md
+INDEX.md
+PROJECT_SUMMARY.md
+COMMANDS.md
+GET_STARTED.md
+SYSTEM_OVERVIEW.md
+DEPLOYMENT.md
+INTEGRATION_GUIDE.md
+PROJECT_STRUCTURE.md
+QUICKSTART.md
+ARCHITECTURE.md
+ACTUAL_FEATURES_IMPLEMENTED.md
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Deployment scripts (not needed in repo)
+deploy_*.sh
+setup_*.sh
+launch_*.sh
+push_to_github.sh
+
+# Alternative app versions (only need app_demo.py)
+frontend/app.py
+frontend/app_production.py
+frontend/app_integrated.py
+frontend/app_complete.py
+frontend/app_real_production.py
+frontend/improved_components.py
+frontend/aws_backend.py
+
+# ECS/Docker deployment files (using Streamlit Cloud instead)
+frontend/Dockerfile
+infrastructure/ecs-frontend.yaml
+deploy_ecs_now.sh
