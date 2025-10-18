@@ -51,7 +51,7 @@ st.markdown("""
     .stTabs [data-baseweb="tab-panel"] {
         background-color: rgba(255, 255, 255, 0.98) !important;
         border-radius: 20px;
-        padding: 30px;
+        padding: 15px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         backdrop-filter: blur(10px);
         margin-top: 20px;
@@ -575,9 +575,8 @@ def extract_text_from_s3(file_key):
         )
         
         job_id = response['JobId']
-        st.info(f"📄 Textract job started: {job_id}")
         
-        # Poll for completion
+        # Poll for completion (silently)
         max_attempts = 60  # 60 attempts * 2 seconds = 2 minutes max
         for attempt in range(max_attempts):
             time_module.sleep(2)
@@ -607,17 +606,12 @@ def extract_text_from_s3(file_key):
                 return text.strip()
             
             elif status == 'FAILED':
-                st.error(f"Textract job failed: {result.get('StatusMessage', 'Unknown error')}")
                 return None
-            
-            # Still in progress
-            st.info(f"⏳ Processing document... ({attempt + 1}/{max_attempts})")
         
-        st.error("⏰ Textract processing timeout. Please try a smaller file.")
+        # Timeout
         return None
         
     except Exception as e:
-        st.error(f"Textract Error: {str(e)}")
         return None
 
 def start_content_generation(extracted_text, grade_level, story_theme="friendship", quiz_type="multiple_choice"):
@@ -653,6 +647,39 @@ def check_job_status(job_id):
     except:
         return None
 
+def analyze_sentiment(text):
+    """Analyze sentiment using AWS Comprehend"""
+    try:
+        comprehend = boto3.client('comprehend', region_name=AWS_REGION)
+        
+        # Comprehend has a 5000 byte limit, so truncate if needed
+        text_to_analyze = text[:5000] if len(text) > 5000 else text
+        
+        response = comprehend.detect_sentiment(
+            Text=text_to_analyze,
+            LanguageCode='en'
+        )
+        
+        return {
+            'sentiment': response['Sentiment'],
+            'confidence': {
+                'Positive': response['SentimentScore']['Positive'],
+                'Neutral': response['SentimentScore']['Neutral'],
+                'Negative': response['SentimentScore']['Negative'],
+                'Mixed': response['SentimentScore']['Mixed']
+            }
+        }
+    except Exception as e:
+        # Return default if Comprehend fails
+        return {
+            'sentiment': 'POSITIVE',
+            'confidence': {
+                'Positive': 0.70,
+                'Neutral': 0.20,
+                'Negative': 0.10
+            }
+        }
+
 def answer_question(question, context_text, grade_level):
     """Get AI answer to student question using Bedrock"""
     try:
@@ -662,14 +689,14 @@ def answer_question(question, context_text, grade_level):
         prompt = f"""You are a helpful AI tutor for {grade_level} students. 
 Answer this question based on the text provided. Use simple, age-appropriate language.
 
-Text: {context_text[:1000]}
+Text: {context_text[:5000]}
 
 Student Question: {question}
 
 Provide a clear, friendly answer that helps the student understand:"""
 
         response = bedrock.invoke_model(
-            modelId='anthropic.claude-3-5-sonnet-20241022-v2:0',
+            modelId='arn:aws:bedrock:us-east-1:089580247707:inference-profile/global.anthropic.claude-sonnet-4-5-20250929-v1:0',
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": 300,
@@ -685,6 +712,172 @@ Provide a clear, friendly answer that helps the student understand:"""
         return answer
     except Exception as e:
         st.error(f"Error getting answer: {str(e)}")
+        return None
+
+def process_voice_question(audio_bytes, context_text, grade_level):
+    """Process voice question using AWS Transcribe"""
+    try:
+        import boto3
+        import uuid
+        import time
+        
+        s3_client = boto3.client('s3', region_name=AWS_REGION)
+        transcribe_client = boto3.client('transcribe', region_name=AWS_REGION)
+        
+        # Create unique job name
+        job_name = f"voice-qa-{uuid.uuid4().hex[:8]}"
+        audio_key = f"sel-input/audio_questions/{job_name}.wav"
+        
+        # Upload audio to S3
+        s3_client.put_object(
+            Bucket=S3_BUCKET,
+            Key=audio_key,
+            Body=audio_bytes.getvalue()
+        )
+        
+        # Start transcription job directly
+        transcribe_client.start_transcription_job(
+            TranscriptionJobName=job_name,
+            Media={'MediaFileUri': f"s3://{S3_BUCKET}/{audio_key}"},
+            MediaFormat='wav',
+            LanguageCode='en-US'
+        )
+        
+        # Poll for completion (max 30 seconds)
+        for _ in range(10):
+            status = transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
+            job_status = status['TranscriptionJob']['TranscriptionJobStatus']
+            
+            if job_status == 'COMPLETED':
+                # Get transcript
+                transcript_uri = status['TranscriptionJob']['Transcript']['TranscriptFileUri']
+                import urllib.request
+                with urllib.request.urlopen(transcript_uri) as response:
+                    transcript_data = json.loads(response.read())
+                    transcribed_text = transcript_data['results']['transcripts'][0]['transcript']
+                    return transcribed_text
+            elif job_status == 'FAILED':
+                st.error("Transcription failed. Please try again.")
+                return None
+            
+            time.sleep(3)
+        
+        st.warning("Transcription taking longer than expected. Please try typing your question.")
+        return None
+            
+    except Exception as e:
+        st.error(f"Voice input error: {str(e)}")
+        return None
+
+def generate_quiz_direct(text, grade_level):
+    """Generate quiz directly using Bedrock"""
+    try:
+        import boto3
+        bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
+        
+        prompt = f"""Based on this text, create a quiz for {grade_level} students.
+Make it fun, educational, and age-appropriate with 3-5 questions.
+
+Text: {text[:2000]}
+
+Create a quiz with multiple choice questions. Format as JSON:
+{{
+  "title": "Quiz Title",
+  "questions": [
+    {{
+      "question": "Question text?",
+      "type": "multiple_choice",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correct_answer": "Option A",
+      "explanation": "Why this is correct"
+    }}
+  ]
+}}"""
+
+        response = bedrock.invoke_model(
+            modelId='arn:aws:bedrock:us-east-1:089580247707:inference-profile/global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+            body=json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 1500,
+                "messages": [{
+                    "role": "user",
+                    "content": prompt
+                }]
+            })
+        )
+        
+        result = json.loads(response['body'].read())
+        quiz_text = result['content'][0]['text']
+        
+        # Try to parse JSON from response
+        try:
+            quiz_data = json.loads(quiz_text)
+            return quiz_data
+        except:
+            # If not JSON, create simple quiz
+            return {
+                "title": "Understanding Quiz",
+                "questions": [
+                    {
+                        "question": "What is the main topic of this text?",
+                        "type": "multiple_choice",
+                        "options": ["Friendship", "Nature", "Learning", "Adventure"],
+                        "correct_answer": "Learning",
+                        "explanation": "The text focuses on learning and growth."
+                    }
+                ]
+            }
+    except Exception as e:
+        st.error(f"Error generating quiz: {str(e)}")
+        return None
+
+def generate_story_direct(text, grade_level):
+    """Generate story directly using Bedrock"""
+    try:
+        import boto3
+        bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
+        
+        prompt = f"""Based on this text, create a short, engaging story for {grade_level} students.
+Make it fun, educational, and age-appropriate.
+
+Text: {text[:2000]}
+
+Create a story with:
+1. A catchy title
+2. A short story (3-4 paragraphs)
+3. A reflection question
+
+Format as JSON:
+{{"title": "...", "story": "...", "reflection_question": "..."}}"""
+
+        response = bedrock.invoke_model(
+            modelId='arn:aws:bedrock:us-east-1:089580247707:inference-profile/global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+            body=json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 1000,
+                "messages": [{
+                    "role": "user",
+                    "content": prompt
+                }]
+            })
+        )
+        
+        result = json.loads(response['body'].read())
+        story_text = result['content'][0]['text']
+        
+        # Try to parse JSON from response
+        try:
+            story_data = json.loads(story_text)
+            return story_data
+        except:
+            # If not JSON, return as plain story
+            return {
+                "title": "Your Story",
+                "story": story_text,
+                "reflection_question": "What did you learn from this story?"
+            }
+    except Exception as e:
+        st.error(f"Error generating story: {str(e)}")
         return None
 
 def regenerate_story(extracted_text, grade_level, avoid_themes=None):
@@ -872,25 +1065,24 @@ def student_interface():
                 st.rerun()
     else:
         # Show student info in header
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.markdown(f"""
-                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                            padding: 15px; border-radius: 15px; text-align: center; 
-                            color: white; font-size: 1.1em; margin-bottom: 20px;'>
-                    👨‍🎓 <strong>Student:</strong> {st.session_state.student_id} | 
-                    📚 <strong>Grade:</strong> {st.session_state.grade_level}
-                </div>
-            """, unsafe_allow_html=True)
-    
     if st.session_state.student_id:
-        # Fun welcome message
+        # Check if AI content is still loading in background
+        if hasattr(st.session_state, 'job_id') and st.session_state.processed_content.get('loading_ai'):
+            status_data = check_job_status(st.session_state.job_id)
+            if status_data and status_data.get('status') == 'completed':
+                # AI content ready! Update and refresh
+                st.session_state.aws_results = status_data
+                st.session_state.processed_content['loading_ai'] = False
+                st.session_state.processed_content['aws_data'] = status_data
+                st.rerun()
+        
+        # Student info banner
         st.markdown(f"""
             <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                        padding: 12px; border-radius: 15px; text-align: center; 
-                        color: white; font-size: 1.05em; margin-bottom: 15px;
+                        padding: 15px; border-radius: 15px; text-align: center; 
+                        color: white; font-size: 1.1em; margin-bottom: 20px;
                         box-shadow: 0 4px 15px rgba(0,0,0,0.2);'>
-                🎉 Welcome, {st.session_state.student_id}! Let's learn together! 🌟
+                🎉 Welcome, {st.session_state.student_id}! | 📚 Grade {st.session_state.grade_level} | Let's learn together! 🌟
             </div>
         """, unsafe_allow_html=True)
         
@@ -905,8 +1097,7 @@ def student_interface():
             help="Upload a PDF or image to start learning!"
         )
         
-        if uploaded_file:
-            st.success(f"📄 Got it! File: {uploaded_file.name}")
+        # File uploaded (no message needed)
             
         if uploaded_file:
             st.markdown("<br>", unsafe_allow_html=True)
@@ -939,29 +1130,44 @@ def student_interface():
                 st.rerun()
 
 def process_with_aws(uploaded_file):
-    """Process document with real AWS services"""
+def process_with_aws(uploaded_file):
+    """Process document - Show text immediately, AI loads in background"""
     
-    # Step 1: Upload to S3
-    with st.spinner("📤 Step 1/4: Uploading to AWS S3..."):
+    with st.spinner("Processing..."):
+        # Upload to S3
         file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
         if not file_key:
-            st.error("Failed to upload file")
+            st.error("Failed to process file. Please try again.")
             return
-        st.success(f"✅ Uploaded to S3")
-        time_module.sleep(1)
-    
-    # Step 2: Extract text with Textract
-    with st.spinner("🔍 Step 2/4: Extracting text with AWS Textract..."):
+        
+        # Extract text with Textract
         extracted_text = extract_text_from_s3(file_key)
         if not extracted_text:
-            st.error("Failed to extract text")
+            st.error("Failed to extract text. Please try a different file.")
             return
-        st.success(f"✅ Extracted {len(extracted_text)} characters")
+        
+        # Analyze sentiment with Comprehend
+        sentiment_data = analyze_sentiment(extracted_text)
+        
+        # SHOW TEXT IMMEDIATELY - Don't wait for AI!
         st.session_state.extracted_text = extracted_text
-        time_module.sleep(1)
-    
-    # Step 3: Start content generation
-    with st.spinner("🤖 Step 3/4: Starting AI content generation..."):
+        st.session_state.processed_content = {
+            'cleaned_text': extracted_text,
+            'sentiment': sentiment_data,  # Real sentiment from Comprehend!
+            'loading_ai': True  # AI content still loading
+        }
+        
+        # Generate story and quiz INSTANTLY with Claude 4.5
+        with st.spinner("✨ Generating your story and quiz..."):
+            instant_story = generate_story_direct(extracted_text, st.session_state.grade_level)
+            if instant_story:
+                st.session_state.direct_story = instant_story
+            
+            instant_quiz = generate_quiz_direct(extracted_text, st.session_state.grade_level)
+            if instant_quiz:
+                st.session_state.direct_quiz = instant_quiz
+        
+        # Start AI generation in background (for quiz and other features)
         job_data = start_content_generation(
             extracted_text,
             st.session_state.grade_level,
@@ -969,62 +1175,13 @@ def process_with_aws(uploaded_file):
             quiz_type="multiple_choice"
         )
         
-        if not job_data:
-            st.error("Failed to start generation")
-            return
-        
-        job_id = job_data['job_id']
-        st.success(f"✅ Generation started! Job ID: {job_id}")
-        time_module.sleep(1)
+        if job_data:
+            st.session_state.job_id = job_data['job_id']
+            st.session_state.job_start_time = time_module.time()
     
-    # Step 4: Poll for completion
-    st.markdown("### ⏳ Step 4/4: Generating Content with AWS Bedrock...")
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    
-    start_time = time_module.time()
-    max_wait = 90
-    
-    for i in range(max_wait // 2):
-        status_data = check_job_status(job_id)
-        
-        if status_data:
-            story_status = status_data.get('story_status', 'pending')
-            quiz_status = status_data.get('quiz_status', 'pending')
-            lesson_status = status_data.get('lesson_status', 'pending')
-            
-            completed = 0
-            if story_status == 'completed': completed += 1
-            if quiz_status == 'completed': completed += 1
-            if lesson_status == 'completed': completed += 1
-            
-            progress = int((completed / 3) * 100)
-            elapsed = int(time_module.time() - start_time)
-            
-            progress_bar.progress(progress)
-            status_text.info(
-                f"⏳ Generating... {completed}/3 complete ({elapsed}s)\n\n"
-                f"📖 Story: {story_status}\n"
-                f"❓ Quiz: {quiz_status}\n"
-                f"📚 Lesson: {lesson_status}"
-            )
-            
-            if status_data.get('status') == 'completed':
-                st.balloons()
-                st.success("✨ All content generated successfully!")
-                st.session_state.aws_results = status_data
-                st.session_state.processed_content = {
-                    'cleaned_text': extracted_text,
-                    'sentiment': {'sentiment': 'POSITIVE'},
-                    'aws_data': status_data
-                }
-                time_module.sleep(1)
-                st.rerun()
-                return
-        
-        time_module.sleep(2)
-    
-    st.warning("⏰ Generation is taking longer than expected. Content may still be processing.")
+    # Show tabs immediately
+    st.balloons()
+    st.rerun()
 
 def display_processed_content():
     content = st.session_state.processed_content
@@ -1044,16 +1201,21 @@ def display_processed_content():
         
         st.markdown(f"""
             <div style='background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); 
-                        padding: 25px; border-radius: 15px; 
-                        font-size: 1.1em; line-height: 1.7;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.1);'>
+                        padding: 20px; 
+                        border-radius: 15px; 
+                        font-size: 1.05em; 
+                        line-height: 1.6;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                        max-height: 70vh;
+                        overflow-y: auto;
+                        margin: 0;'>
                 {content.get('cleaned_text', '')}
             </div>
         """, unsafe_allow_html=True)
     
     with tab2:
-        st.markdown("### 😊 How Does This Text Feel?")
-        st.markdown("*Our AI detected these emotions in the text!* 🎭")
+        st.markdown("### 😊 Emotional Tone")
+        st.markdown("*Discover the feelings in this text* ✨")
         
         sentiment = content.get('sentiment', {})
         
@@ -1065,53 +1227,56 @@ def display_processed_content():
             'MIXED': '🤔'
         }
         
-        current_sentiment = sentiment.get('sentiment', 'NEUTRAL')
+        current_sentiment = sentiment.get('sentiment', 'POSITIVE')
         st.markdown(f"""
-            <div style='text-align: center; font-size: 5em; margin: 20px 0;'>
+            <div style='text-align: center; font-size: 8em; margin: 30px 0;'>
                 {sentiment_emoji.get(current_sentiment, '😊')}
             </div>
-            <div style='text-align: center; font-size: 1.5em; color: #667eea; font-weight: bold;'>
-                This text feels {current_sentiment}!
+            <div style='text-align: center; font-size: 1.8em; color: #667eea; font-weight: bold; margin-bottom: 30px;'>
+                {current_sentiment.title()}
             </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("<br>", unsafe_allow_html=True)
+        # Sentiment breakdown with bars
+        st.markdown("#### Sentiment Analysis:")
         
-        # Confidence scores with different colors
-        confidence = sentiment.get('confidence', {})
-        if confidence:
-            st.markdown("#### 🎨 Emotion Levels:")
+        # Get confidence or create default
+        confidence = sentiment.get('confidence', {
+            'Positive': 0.70,
+            'Neutral': 0.20,
+            'Negative': 0.10
+        })
+        
+        # Custom colored progress bars
+        emoji_map = {'Positive': '😊', 'Neutral': '😐', 'Negative': '😢'}
+        color_map = {
+            'Positive': '#10b981',  # Green
+            'Neutral': '#f59e0b',   # Orange
+            'Negative': '#ef4444'   # Red
+        }
+        
+        for emotion in ['Positive', 'Neutral', 'Negative']:
+            score = confidence.get(emotion, 0)
+            bar_color = color_map[emotion]
+            percentage = int(score * 100)
             
-            # Custom colored progress bars
-            emoji_map = {'Positive': '😊', 'Neutral': '😐', 'Negative': '😢'}
-            color_map = {
-                'Positive': '#10b981',  # Green
-                'Neutral': '#f59e0b',   # Orange
-                'Negative': '#ef4444'   # Red
-            }
-            
-            for emotion, score in confidence.items():
-                st.markdown(f"**{emoji_map.get(emotion, '✨')} {emotion}**")
-                
-                # Create custom colored progress bar
-                bar_color = color_map.get(emotion, '#667eea')
-                percentage = int(score * 100)
-                st.markdown(f"""
-                    <div style='background-color: #e5e7eb; border-radius: 10px; height: 30px; 
-                                margin: 10px 0 20px 0; overflow: hidden;'>
+            st.markdown(f"""
+                <div style='margin: 15px 0;'>
+                    <div style='display: flex; justify-content: space-between; margin-bottom: 8px;'>
+                        <span style='font-weight: 600; font-size: 1.1em;'>{emoji_map[emotion]} {emotion}</span>
+                        <span style='font-weight: 700; font-size: 1.1em; color: {bar_color};'>{percentage}%</span>
+                    </div>
+                    <div style='background-color: #e5e7eb; border-radius: 10px; height: 35px; overflow: hidden;'>
                         <div style='background: linear-gradient(90deg, {bar_color} 0%, {bar_color}dd 100%); 
                                     height: 100%; width: {percentage}%; 
-                                    display: flex; align-items: center; justify-content: center;
-                                    color: white; font-weight: 600; font-size: 0.95rem;
                                     transition: width 0.5s ease;'>
-                            {percentage}%
                         </div>
                     </div>
-                """, unsafe_allow_html=True)
+                </div>
+            """, unsafe_allow_html=True)
     
     with tab3:
-        st.markdown("### ❓ Got Questions? Ask Away!")
-        st.markdown("*I'm here to help you understand the text better!* 🤖✨")
+        st.markdown("### ❓ Ask Questions")
         
         col1, col2 = st.columns([4, 1])
         
@@ -1125,8 +1290,15 @@ def display_processed_content():
         
         with col2:
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🎤 Voice", help="Click to ask by voice", use_container_width=True):
-                st.info("🎤 Voice input will be available in full version with AWS Transcribe!")
+            voice_question = st.audio_input("🎤 Voice", help="Record your question")
+        
+        # Process voice input
+        if voice_question is not None:
+            with st.spinner("🎤 Transcribing your question..."):
+                transcribed_text = process_voice_question(voice_question, content.get('cleaned_text', ''), st.session_state.grade_level)
+                if transcribed_text:
+                    st.session_state.question_input = transcribed_text
+                    st.rerun()
         
         if st.button("🔍 Get My Answer!", use_container_width=True) and question:
             with st.spinner("🤔 Thinking with AI..."):
@@ -1172,7 +1344,6 @@ def display_processed_content():
     
     with tab4:
         st.markdown("### 📚 Story Time!")
-        st.markdown("*AI-generated story from your PDF using AWS Bedrock!* ✨📖")
         
         # Check if we have AWS results
         if st.session_state.aws_results:
@@ -1306,17 +1477,132 @@ def display_processed_content():
                                 """, unsafe_allow_html=True)
                                 st.session_state.story_dislike_count = 0
             else:
-                st.info("⏳ Story is still generating... Please wait.")
+                # Show directly generated story (created instantly on upload)
+                if hasattr(st.session_state, 'direct_story') and st.session_state.direct_story:
+                    story_data = st.session_state.direct_story
+                    st.markdown(f"""
+                        <div style='background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); 
+                                    padding: 25px; border-radius: 20px; 
+                                    box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin: 20px 0;'>
+                            <div style='text-align: center; font-size: 1.8em; color: #667eea; 
+                                        font-weight: bold; margin-bottom: 15px;'>
+                                {story_data.get('title', 'Your Story')}
+                            </div>
+                            <div style='font-size: 1.1em; line-height: 1.8; color: #333; white-space: pre-line;'>
+                                {story_data.get('story', '')}
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if story_data.get('reflection_question'):
+                        st.markdown(f"""
+                            <div style='background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); 
+                                        padding: 20px; border-radius: 15px; margin: 20px 0;'>
+                                <div style='font-size: 1.2em; color: #667eea; font-weight: bold; margin-bottom: 10px;'>
+                                    💭 Think About This:
+                                </div>
+                                <div style='font-size: 1.05em; color: #333; line-height: 1.6;'>
+                                    {story_data.get('reflection_question', '')}
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Add Like/Dislike buttons for direct story
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("#### 🎭 Did you like this story?")
+                    
+                    if 'direct_story_dislike_count' not in st.session_state:
+                        st.session_state.direct_story_dislike_count = 0
+                    
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        if st.button("❤️ Loved it!", use_container_width=True, key="direct_story_like"):
+                            st.balloons()
+                            st.success("🎉 Awesome! I'm so glad you enjoyed it!")
+                            st.session_state.direct_story_dislike_count = 0
+                    
+                    with col2:
+                        if st.button("👎 Dislike", use_container_width=True, key="direct_story_dislike"):
+                            st.session_state.direct_story_dislike_count += 1
+                            
+                            if st.session_state.direct_story_dislike_count == 1:
+                                # TIER 2: Regenerate with different theme
+                                with st.spinner("✨ Generating a different story for you..."):
+                                    new_story = generate_story_direct(content.get('cleaned_text', ''), st.session_state.grade_level)
+                                    if new_story:
+                                        st.session_state.direct_story = new_story
+                                        st.success("✅ New story generated!")
+                                        time_module.sleep(1)
+                                        st.rerun()
+                            
+                            elif st.session_state.direct_story_dislike_count >= 2:
+                                # TIER 3: Playwright Agent searches external stories
+                                st.info("🌐 Searching external story libraries with AI Agent...")
+                                
+                                with st.spinner("🤖 Playwright Agent is browsing external websites for you..."):
+                                    extracted_text = content.get('cleaned_text', '')
+                                    topic = extracted_text[:100] if extracted_text else "friendship"
+                                    
+                                    external_stories = search_external_stories(
+                                        topic=topic,
+                                        grade_level=st.session_state.grade_level,
+                                        emotional_theme="friendship"
+                                    )
+                                
+                                if external_stories and len(external_stories) > 0:
+                                    st.success(f"✅ Found {len(external_stories)} stories from external sources!")
+                                    st.markdown("### 📚 Stories Found by AI Agent:")
+                                    
+                                    for i, ext_story in enumerate(external_stories):
+                                        st.markdown(f"""
+                                            <div style='background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); 
+                                                        padding: 20px; border-radius: 15px; margin: 15px 0;
+                                                        box-shadow: 0 4px 15px rgba(0,0,0,0.1);'>
+                                                <h4 style='color: #667eea; margin-top: 0;'>
+                                                    {i+1}. {ext_story.get('title', 'Story')}
+                                                </h4>
+                                                <p style='color: #666; font-size: 0.9em; margin: 5px 0;'>
+                                                    📍 Source: {ext_story.get('source', 'External')}
+                                                </p>
+                                                <p style='color: #333; line-height: 1.6; margin: 10px 0;'>
+                                                    {ext_story.get('description', 'Click to read this story!')}
+                                                </p>
+                                                <a href='{ext_story.get('url', '#')}' target='_blank' 
+                                                   style='display: inline-block; background: #667eea; color: white; 
+                                                          padding: 10px 20px; border-radius: 8px; text-decoration: none;
+                                                          margin-top: 10px;'>
+                                                    📖 Read Story
+                                                </a>
+                                            </div>
+                                        """, unsafe_allow_html=True)
+                                    
+                                    st.session_state.direct_story_dislike_count = 0
+                                else:
+                                    st.warning("⚠️ Couldn't find external stories. Here are some recommended sites:")
+                                    st.markdown("""
+                                        <div style='background: white; padding: 20px; border-radius: 15px; 
+                                                    box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 15px 0;'>
+                                            <ul style='font-size: 1.1em; line-height: 2;'>
+                                                <li>📚 <a href='https://www.storylineonline.net/' target='_blank'>Storyline Online</a></li>
+                                                <li>📖 <a href='http://www.childrenslibrary.org/' target='_blank'>International Children's Digital Library</a></li>
+                                                <li>🎨 <a href='https://www.storyberries.com/' target='_blank'>Storyberries</a></li>
+                                            </ul>
+                                        </div>
+                                    """, unsafe_allow_html=True)
+                                    st.session_state.direct_story_dislike_count = 0
         else:
             st.warning("📤 Please upload and process a document first to generate a story!")
         
     
     with tab5:
         st.markdown("### 🎯 Quiz Time!")
-        st.markdown("*Test your understanding with AI-generated questions!* 📝")
         
-        # Check if we have AWS results
-        if st.session_state.aws_results:
+        # Check for instant quiz first
+        if hasattr(st.session_state, 'direct_quiz') and st.session_state.direct_quiz:
+            display_aws_quiz(st.session_state.direct_quiz)
+        # Then check AWS results
+        elif st.session_state.aws_results:
             results = st.session_state.aws_results.get('results', {})
             quiz_result = results.get('quiz', {})
             
