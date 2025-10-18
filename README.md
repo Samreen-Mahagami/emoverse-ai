@@ -147,7 +147,6 @@ sel-platform/
    - Extension exercises
    - Assessment methods
 3. **Analytics**: View student performance and emotional trends
-4. **Insights**: Historical data for informed teaching decisions
 
 ## 💡 Key Innovation: Long-Term Memory (LTM)
 
