@@ -1132,7 +1132,6 @@ def student_interface():
                 st.rerun()
 
 def process_with_aws(uploaded_file):
-def process_with_aws(uploaded_file):
     """Process document - Show text immediately, AI loads in background"""
     
     with st.spinner("Processing..."):
