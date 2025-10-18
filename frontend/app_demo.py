@@ -541,6 +541,19 @@ if 'aws_results' not in st.session_state:
 def upload_to_s3(file, student_id):
     """Upload file to S3"""
     try:
+        # Check file size (Textract async limit is 500MB)
+        file.seek(0, 2)  # Seek to end
+        file_size = file.tell()
+        file.seek(0)  # Reset to beginning
+        
+        # 500MB limit for Textract asynchronous API
+        max_size = 500 * 1024 * 1024  # 500MB in bytes
+        
+        if file_size > max_size:
+            st.error(f"⚠️ File too large: {file_size / (1024*1024):.1f}MB. Maximum size is 500MB for PDF processing.")
+            st.info("💡 Please try a smaller PDF or compress your file.")
+            return None
+        
         file_key = f"uploads/{student_id}/{file.name}"
         s3_client.upload_fileobj(file, S3_BUCKET, file_key)
         return file_key
@@ -549,18 +562,60 @@ def upload_to_s3(file, student_id):
         return None
 
 def extract_text_from_s3(file_key):
-    """Extract text using AWS Textract"""
+    """Extract text using AWS Textract (Asynchronous for large files)"""
     try:
-        response = textract_client.detect_document_text(
-            Document={'S3Object': {'Bucket': S3_BUCKET, 'Name': file_key}}
+        # Start asynchronous text detection
+        response = textract_client.start_document_text_detection(
+            DocumentLocation={
+                'S3Object': {
+                    'Bucket': S3_BUCKET,
+                    'Name': file_key
+                }
+            }
         )
         
-        text = ""
-        for block in response['Blocks']:
-            if block['BlockType'] == 'LINE':
-                text += block['Text'] + "\n"
+        job_id = response['JobId']
+        st.info(f"📄 Textract job started: {job_id}")
         
-        return text.strip()
+        # Poll for completion
+        max_attempts = 60  # 60 attempts * 2 seconds = 2 minutes max
+        for attempt in range(max_attempts):
+            time_module.sleep(2)
+            
+            result = textract_client.get_document_text_detection(JobId=job_id)
+            status = result['JobStatus']
+            
+            if status == 'SUCCEEDED':
+                # Extract text from all pages
+                text = ""
+                for block in result.get('Blocks', []):
+                    if block['BlockType'] == 'LINE':
+                        text += block['Text'] + "\n"
+                
+                # Get additional pages if any
+                next_token = result.get('NextToken')
+                while next_token:
+                    result = textract_client.get_document_text_detection(
+                        JobId=job_id,
+                        NextToken=next_token
+                    )
+                    for block in result.get('Blocks', []):
+                        if block['BlockType'] == 'LINE':
+                            text += block['Text'] + "\n"
+                    next_token = result.get('NextToken')
+                
+                return text.strip()
+            
+            elif status == 'FAILED':
+                st.error(f"Textract job failed: {result.get('StatusMessage', 'Unknown error')}")
+                return None
+            
+            # Still in progress
+            st.info(f"⏳ Processing document... ({attempt + 1}/{max_attempts})")
+        
+        st.error("⏰ Textract processing timeout. Please try a smaller file.")
+        return None
+        
     except Exception as e:
         st.error(f"Textract Error: {str(e)}")
         return None
