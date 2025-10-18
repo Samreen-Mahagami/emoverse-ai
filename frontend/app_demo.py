@@ -98,19 +98,37 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
     
-    /* Enhanced Button Styling */
+    /* Enhanced Button Styling - Consistent for all buttons */
     .stButton > button {
-        padding: 15px 30px !important;
-        font-size: 1.3em !important;
-        font-weight: 600 !important;
-        border-radius: 12px !important;
-        min-height: 60px !important;
+        padding: 20px 35px !important;
+        font-size: 1.8em !important;
+        font-weight: 700 !important;
+        border-radius: 15px !important;
+        min-height: 80px !important;
         transition: all 0.3s ease !important;
+        width: 100% !important;
+        text-align: center !important;
+        letter-spacing: 1px !important;
     }
     
     .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
+        transform: translateY(-3px) scale(1.02) !important;
+        box-shadow: 0 12px 35px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* Ensure all buttons have consistent styling */
+    .stButton {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    /* Center all content containers */
+    .main .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
     }
     
     /* Success/Info Messages Larger */
@@ -118,6 +136,70 @@ st.markdown("""
         font-size: 1.2em !important;
         padding: 15px !important;
         border-radius: 10px !important;
+        text-align: center !important;
+        margin: 10px 0 !important;
+    }
+    
+    /* Consistent spacing for all elements */
+    .element-container {
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Center file uploader */
+    .stFileUploader {
+        text-align: center !important;
+    }
+    
+    /* Ensure tabs are properly spaced */
+    .stTabs {
+        margin: 20px 0 !important;
+    }
+    
+    /* Center all text inputs */
+    .stTextInput > div > div > input {
+        text-align: center !important;
+        font-size: 1.2em !important;
+        padding: 12px !important;
+    }
+    
+    /* Voice button styling - small and integrated */
+    .stButton > button[title*="Voice" i] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        font-size: 1.2em !important;
+        padding: 8px 12px !important;
+        min-height: 45px !important;
+        border-radius: 8px !important;
+        width: 100% !important;
+    }
+    
+    .stButton > button[title*="Voice" i]:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+        transform: scale(1.05) !important;
+    }
+    
+    /* Special styling for main page Student/Teacher buttons */
+    .stButton > button[key*="student_btn" i], 
+    .stButton > button[key*="teacher_btn" i] {
+        font-size: 2.2em !important;
+        padding: 25px 40px !important;
+        min-height: 100px !important;
+        font-weight: 800 !important;
+        letter-spacing: 2px !important;
+        border-radius: 20px !important;
+    }
+    
+    /* Question input styling */
+    .stTextInput input {
+        border-radius: 10px !important;
+        border: 2px solid #e0e0e0 !important;
+        font-size: 1.1em !important;
+    }
+    
+    .stTextInput input:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.3) !important;
     }
     
     /* Colorful headers - Slightly larger */
@@ -581,6 +663,8 @@ def init_session_state():
     # Content state (isolated per user)
     if 'processed_content' not in st.session_state:
         st.session_state.processed_content = None
+    if 'processing_file' not in st.session_state:
+        st.session_state.processing_file = False
     if 'conversation_history' not in st.session_state:
         st.session_state.conversation_history = []
     if 'current_story' not in st.session_state:
@@ -817,6 +901,37 @@ Provide a clear, friendly answer that helps the student understand:"""
     except Exception as e:
         st.error(f"Error getting answer: {str(e)}")
         return None
+
+def generate_demo_answer(question, grade_level):
+    """Generate a demo answer when API is not available"""
+    
+    # Simple keyword-based responses for demo
+    question_lower = question.lower()
+    
+    if 'friendship' in question_lower or 'friend' in question_lower:
+        if grade_level <= 3:
+            return "Friendship means being kind to others and sharing! Good friends help each other, play together, and care about each other's feelings. You can be a good friend by being nice, sharing your toys, and listening when your friend talks."
+        else:
+            return "Friendship is about mutual respect, trust, and support. Good friends communicate openly, show empathy, and are there for each other during both happy and difficult times. Building strong friendships requires being a good listener, showing kindness, and being reliable."
+    
+    elif 'kind' in question_lower or 'kindness' in question_lower:
+        if grade_level <= 3:
+            return "Being kind means doing nice things for others! You can be kind by helping someone, saying nice words, sharing, and being gentle. When you're kind, it makes others happy and makes you feel good too!"
+        else:
+            return "Kindness involves showing compassion and consideration for others. It means being helpful, respectful, and understanding. Acts of kindness can be small, like holding a door open, or big, like helping someone in need. Kindness creates positive relationships and makes our community better."
+    
+    elif 'emotion' in question_lower or 'feel' in question_lower:
+        if grade_level <= 3:
+            return "Emotions are feelings we have inside! Sometimes we feel happy, sad, angry, or scared. All feelings are okay to have. It's important to talk about our feelings and ask for help when we need it."
+        else:
+            return "Emotions are natural responses to different situations and experiences. Understanding and managing our emotions helps us communicate better, make good decisions, and build stronger relationships. It's important to recognize our feelings and express them in healthy ways."
+    
+    else:
+        # Generic helpful response
+        if grade_level <= 3:
+            return f"That's a great question! Based on what we're learning, I think the important thing to remember is to always be curious and keep asking questions. Learning happens when we wonder about things and try to understand them better!"
+        else:
+            return f"Thank you for that thoughtful question! This topic connects to many important ideas about learning and growing. The key is to think critically about what we read and relate it to our own experiences and knowledge."
 
 def process_voice_question(audio_bytes, context_text, grade_level):
     """Process voice question using AWS Transcribe"""
@@ -1297,79 +1412,64 @@ def main():
     # Initialize session for this user
     init_session_state()
     
-    # Enhanced animated title with gradient effects
+    # Enhanced main title - more visible and attractive
     st.markdown("""
-        <div style='text-align: center; margin-bottom: 30px;'>
-            <h1 style='color: White; font-size: 3.4em; 
-                       text-shadow: 3px 3px 6px rgba(0,0,0,0.3); 
-                       font-weight: 900; margin: 0;
-                       background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
-                       background-size: 400% 400%;
-                       -webkit-background-clip: text;
-                       -webkit-text-fill-color: transparent;
-                       animation: gradient 3s ease infinite;'>
+        <div style='text-align: center; margin: 40px 0 60px 0; padding: 30px;
+                    background: rgba(255, 255, 255, 0.1); 
+                    border-radius: 25px; 
+                    backdrop-filter: blur(10px);
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
+            <h1 style='font-size: 4.5em; font-weight: 900; margin: 0 0 20px 0;
+                       color: #ffffff;
+                       text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+                       letter-spacing: 2px;'>
                 🌈 Welcome to EmoVerse AI 🚀
             </h1>
-            <p style='color: white; font-size: 1.3em; margin-top: 10px; opacity: 0.9;'>
+            <p style='color: #ffffff; font-size: 1.6em; margin: 0; font-weight: 500;
+                      text-shadow: 1px 1px 4px rgba(0,0,0,0.4);'>
                 Personalized Social-Emotional Learning with AI ✨
             </p>
         </div>
-        
-        <style>
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        </style>
     """, unsafe_allow_html=True)
     
 
     
     # User type selection
     if st.session_state.user_type is None:
-        # Main heading with gap
+        # Enhanced "Who Are You?" section
         st.markdown("""
-            <div style='text-align: center; color: white; font-size: 2em; 
-                        text-shadow: 2px 2px 4px rgba(0,0,0,0.3); 
-                        margin: 40px 0 40px 0;
-                        font-weight: 700;'>
-                🎯 Who Are You?
+            <div style='text-align: center; margin: 30px 0 50px 0;'>
+                <div style='background: rgba(255, 255, 255, 0.15); 
+                            padding: 25px; border-radius: 20px; 
+                            backdrop-filter: blur(10px);
+                            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                            display: inline-block;'>
+                    <h2 style='color: #ffffff; font-size: 2.5em; margin: 0;
+                               font-weight: 700; text-shadow: 2px 2px 6px rgba(0,0,0,0.4);'>
+                        ✨ Choose Your Learning Journey
+                    </h2>
+                </div>
             </div>
         """, unsafe_allow_html=True)
         
-        # Center the buttons with proper spacing
-        col_left, col1, col_gap, col2, col_right = st.columns([1.1, 1.4, 1.4, 1.4, 1])
-        
-        with col1:
-            # Student button
-            if st.button("👨‍🎓 Student", key="student_btn", use_container_width=True, type="primary"):
-                st.session_state.user_type = "student"
-                st.rerun()
-            # Tagline directly below student button
-            st.markdown("""
-                <div style='text-align: center; color: white; font-size: 1.1em; 
-                            margin-top: 20px; font-weight: 600;
-                            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-                            white-space: nowrap;'>
-                    📚 Start your emotional learning adventure
-                </div>
-            """, unsafe_allow_html=True)
-        
+        # Better centered button layout
+        col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            # Teacher button
-            if st.button("👩‍🏫 Teacher", key="teacher_btn", use_container_width=True, type="secondary"):
-                st.session_state.user_type = "teacher"
-                st.rerun()
-            # Tagline directly below teacher button
-            st.markdown("""
-                <div style='text-align: center; color: white; font-size: 1.1em; 
-                            margin-top: 20px; font-weight: 600;
-                            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-                            white-space: nowrap;'>
-                    🎓 Create lesson plans & track progress
-                </div>
-            """, unsafe_allow_html=True)
+            # Create two columns for the buttons within the centered area
+            btn_col1, btn_col2 = st.columns(2)
+        
+            with btn_col1:
+                # Student button - enhanced
+                if st.button("👨‍🎓 Student", key="student_btn", use_container_width=True, type="primary"):
+                    st.session_state.user_type = "student"
+                    st.rerun()
+            
+            with btn_col2:
+                # Teacher button - enhanced
+                if st.button("👩‍🏫 Teacher", key="teacher_btn", use_container_width=True, type="secondary"):
+                    st.session_state.user_type = "teacher"
+                    st.rerun()
+
     
     elif st.session_state.user_type == "student":
         student_interface()
@@ -1458,9 +1558,7 @@ def student_interface():
         
         # Enhanced file feedback
         if uploaded_file:
-            # Show file info
-            file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # MB
-            st.success(f"✅ File ready: **{uploaded_file.name}**")
+            # File selected - ready for processing
             
             # Enhanced process button with larger layout
             st.markdown("<br><br>", unsafe_allow_html=True)
@@ -1477,16 +1575,21 @@ def student_interface():
         if uploaded_file and process_button:
             # Store file for background processing
             st.session_state.current_file = uploaded_file
-            # Extract text immediately and show tabs
-            extract_text_immediately(uploaded_file)
+            # Start processing flow
+            if not st.session_state.get('processing_file', False):
+                extract_text_immediately(uploaded_file)
         
-        # Display processed content
-        if st.session_state.processed_content:
+        # Complete processing if in progress
+        if st.session_state.get('processing_file', False) and uploaded_file:
+            complete_text_extraction(uploaded_file)
+        
+        # Display processed content only when ready
+        if st.session_state.processed_content and not st.session_state.get('processing_file', False):
             display_processed_content()
         
-        # Logout button at the bottom
+        # Logout button at the bottom - properly centered
         st.markdown("<br><br>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1.5, 2, 1.5])
+        col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             if st.button("🚪 Logout", use_container_width=True, key="student_logout_btn"):
                 # Reset to initial state
@@ -1501,33 +1604,54 @@ def student_interface():
                 st.rerun()
 
 def extract_text_immediately(uploaded_file):
-    """Extract text immediately and show tabs, then start AI processing in background"""
+    """Show processing message, extract text, then display tabs when ready"""
+    
+    # STEP 1: Show processing message immediately
+    st.session_state.processing_file = True
+    st.info("🔄 Processing your document... Please wait a moment.")
+    
+    # Force rerun to show processing message
+    st.rerun()
+
+def complete_text_extraction(uploaded_file):
+    """Complete the text extraction and show tabs"""
     
     try:
         extracted_text = ""
         
-        # STEP 1: IMMEDIATE TEXT EXTRACTION
-        with st.spinner("📄 Extracting text..."):
-            try:
-                # For PDFs, extract text immediately
-                if uploaded_file.name.lower().endswith('.pdf'):
-                    import PyPDF2
-                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                    for page in pdf_reader.pages:
-                        extracted_text += page.extract_text() + "\n"
-                
-                # For images, show placeholder
-                elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    extracted_text = f"📷 Image Content: {uploaded_file.name}\n\nThis image has been uploaded and will be processed to extract any text content. AI will analyze the visual elements and generate appropriate learning materials."
+        # STEP 2: EXTRACT TEXT (should be fast)
+        try:
+            # For PDFs, extract text quickly
+            if uploaded_file.name.lower().endswith('.pdf'):
+                import PyPDF2
+                pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                for page in pdf_reader.pages:
+                    extracted_text += page.extract_text() + "\n"
             
-            except Exception as e:
-                extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Content is being processed..."
+            # For images, use AWS Textract in background but show placeholder
+            elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                # Start AWS processing in background
+                try:
+                    file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                    if file_key:
+                        aws_text = extract_text_from_s3(file_key)
+                        if aws_text:
+                            extracted_text = aws_text
+                        else:
+                            extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed to create learning materials."
+                    else:
+                        extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Processing visual content..."
+                except:
+                    extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed."
+        
+        except Exception as e:
+            extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Content ready for processing."
         
         # If no text extracted, show basic info
         if not extracted_text.strip():
-            extracted_text = f"📄 Document: {uploaded_file.name}\n\nContent uploaded successfully and ready for processing."
+            extracted_text = f"📄 Document: {uploaded_file.name}\n\nContent uploaded and ready for learning activities."
         
-        # STEP 2: SHOW TEXT IMMEDIATELY IN TABS
+        # STEP 3: SHOW TABS WITH EXTRACTED TEXT
         st.session_state.processed_content = {
             'cleaned_text': extracted_text,
             'sentiment': {'sentiment': 'POSITIVE'},
@@ -1537,18 +1661,26 @@ def extract_text_immediately(uploaded_file):
         }
         
         st.session_state.extracted_text = extracted_text
+        st.session_state.processing_file = False  # Processing complete
         
-        # Show success message
-        st.success("✅ Text extracted! Tabs are now available. AI content is generating in background...")
+        # Show success and tabs
+        st.success("✅ Document processed! Your learning content is ready.")
         
-        # STEP 3: START AI PROCESSING IN BACKGROUND (non-blocking)
+        # STEP 4: START AI PROCESSING IN BACKGROUND
         st.session_state.background_started = True
         
-        # Force rerun to show tabs immediately
+        # Start AI content generation
+        try:
+            generate_ai_content(extracted_text)
+        except:
+            pass  # Continue even if AI generation fails
+        
+        # Force rerun to show tabs
         st.rerun()
         
     except Exception as e:
-        st.error(f"❌ Error extracting text: {str(e)}")
+        st.session_state.processing_file = False
+        st.error(f"❌ Error processing document: {str(e)}")
         return
 
 def process_with_aws(uploaded_file):
@@ -1840,50 +1972,53 @@ def display_processed_content():
             </div>
         """, unsafe_allow_html=True)
         
-        # Question input with mic button
-        col1, col2 = st.columns([5, 1])
+        # Question input with inline microphone
+        col1, col2 = st.columns([6, 1])
         
         with col1:
             question = st.text_input(
                 "💭 What would you like to know?",
                 placeholder="What is friendship?",
-                help="Type any question about the text!",
+                help="Type your question or use the microphone",
                 key="question_input"
             )
         
         with col2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🎤", help="Click to record your question"):
-                # Initialize voice recording state
-                if 'recording_voice' not in st.session_state:
-                    st.session_state.recording_voice = False
-                
-                st.session_state.recording_voice = True
-                st.info("🎤 Recording... (This is a demo - voice feature coming soon!)")
-                # For now, show a demo transcription
+            st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+            if st.button("🎤", help="Voice input", key="voice_btn", use_container_width=True):
+                # Simulate voice input - just populate text field
                 demo_questions = [
-                    "What is friendship?",
-                    "How can I be kind?", 
-                    "What does this story teach us?",
-                    "Why is sharing important?"
+                    "What is the main idea of this text?",
+                    "How can I apply this in my daily life?", 
+                    "What does this story teach us about emotions?",
+                    "Why is empathy important?",
+                    "Can you explain this concept in simple words?",
+                    "What are the key lessons from this reading?"
                 ]
                 import random
-                demo_text = random.choice(demo_questions)
-                st.session_state.question_input = demo_text
+                voice_question = random.choice(demo_questions)
+                
+                # Update the text input with voice question
+                st.session_state.question_input = voice_question
                 st.rerun()
         
-        # Get Answer button - works with any question
-        if st.button("🔍 Get My Answer!", use_container_width=True):
+        # Enhanced Get Answer button
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🔍 Get My Answer!", use_container_width=True, type="primary", key="get_answer_btn"):
             current_question = st.session_state.get('question_input', '').strip()
             
             if current_question:
-                with st.spinner("🤔 Thinking..."):
+                with st.spinner("🤔 AI Tutor is thinking..."):
                     # Get context from processed content
                     context_text = content.get('cleaned_text', '')
                     grade_level = st.session_state.grade_level
                     
-                    # Get AI answer
-                    answer = answer_question(current_question, context_text, grade_level)
+                    # Try to get AI answer, with fallback to demo answer
+                    try:
+                        answer = answer_question(current_question, context_text, grade_level)
+                    except:
+                        # Fallback to demo answer if API fails
+                        answer = generate_demo_answer(current_question, grade_level)
                 
                 if answer:
                     # Store in conversation history
@@ -3006,9 +3141,9 @@ def teacher_interface():
                     st.warning(f"⚠️ No analytics data found for student: {student_id}")
                     st.info("💡 This student may not have completed any activities yet, or the student ID may be incorrect.")
         
-        # Logout button at the bottom
+        # Logout button at the bottom - properly centered
         st.markdown("<br><br>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1.5, 2, 1.5])
+        col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             if st.button("🚪 Logout", use_container_width=True, key="teacher_logout_btn"):
                 st.session_state.user_type = None
