@@ -1065,6 +1065,8 @@ def student_interface():
                 st.rerun()
     else:
         # Show student info in header
+        pass
+    
     if st.session_state.student_id:
         # Check if AI content is still loading in background
         if hasattr(st.session_state, 'job_id') and st.session_state.processed_content.get('loading_ai'):
