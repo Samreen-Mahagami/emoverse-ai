@@ -30,8 +30,6 @@ A comprehensive serverless platform that combines AWS AI services, Claude Sonnet
 ### For Teachers
 - 📝 **Auto Lesson Plans**: Generate 30-45 minute structured lesson plans instantly
 - 📊 **Student Analytics**: Track performance, emotional trends, and engagement
-- 📈 **Historical Data**: View 30+ days of student emotional and learning history
-- 🎯 **SEL-Aligned**: All content aligned with SEL competencies
 
 ### System Intelligence
 - 🧠 **Long-Term Memory**: Tracks student preferences, dislikes, and performance
