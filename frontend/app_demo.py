@@ -775,14 +775,17 @@ def generate_quiz_direct(text, grade_level):
         import boto3
         bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
         
-        prompt = f"""Based on this text, create a quiz for {grade_level} students.
-Make it fun, educational, and age-appropriate with 3-5 questions.
+        prompt = f"""Based on this text, create a comprehensive quiz for {grade_level} students with 20 questions total:
+- 5 Multiple Choice Questions (MCQ)
+- 5 True/False Questions
+- 5 Fill in the Blanks Questions
+- 5 Match the Pair Questions
 
 Text: {text[:2000]}
 
-Create a quiz with multiple choice questions. Format as JSON:
+Make it fun, educational, and age-appropriate. Format as JSON:
 {{
-  "title": "Quiz Title",
+  "title": "Understanding Quiz",
   "questions": [
     {{
       "question": "Question text?",
@@ -790,9 +793,30 @@ Create a quiz with multiple choice questions. Format as JSON:
       "options": ["Option A", "Option B", "Option C", "Option D"],
       "correct_answer": "Option A",
       "explanation": "Why this is correct"
+    }},
+    {{
+      "question": "Statement is true or false?",
+      "type": "true_false",
+      "correct_answer": "True",
+      "explanation": "Explanation"
+    }},
+    {{
+      "question": "The main character's name is ___.",
+      "type": "fill_blank",
+      "correct_answer": "answer",
+      "explanation": "Explanation"
+    }},
+    {{
+      "question": "Match: Concept A",
+      "type": "match_pair",
+      "options": ["Definition 1", "Definition 2", "Definition 3", "Definition 4"],
+      "correct_answer": "Definition 1",
+      "explanation": "Explanation"
     }}
   ]
-}}"""
+}}
+
+IMPORTANT: Create exactly 5 questions of EACH type (20 total). Mix them throughout the quiz."""
 
         response = bedrock.invoke_model(
             modelId='arn:aws:bedrock:us-east-1:089580247707:inference-profile/global.anthropic.claude-sonnet-4-5-20250929-v1:0',
@@ -811,19 +835,152 @@ Create a quiz with multiple choice questions. Format as JSON:
         
         # Try to parse JSON from response
         try:
+            # Remove markdown code blocks if present
+            if '```json' in quiz_text:
+                quiz_text = quiz_text.split('```json')[1].split('```')[0].strip()
+            elif '```' in quiz_text:
+                quiz_text = quiz_text.split('```')[1].split('```')[0].strip()
+            
             quiz_data = json.loads(quiz_text)
             return quiz_data
         except:
-            # If not JSON, create simple quiz
+            # If not JSON, create sample quiz with all types
             return {
                 "title": "Understanding Quiz",
                 "questions": [
+                    # MCQ Questions
                     {
                         "question": "What is the main topic of this text?",
                         "type": "multiple_choice",
                         "options": ["Friendship", "Nature", "Learning", "Adventure"],
                         "correct_answer": "Learning",
                         "explanation": "The text focuses on learning and growth."
+                    },
+                    {
+                        "question": "What emotion is most present?",
+                        "type": "multiple_choice",
+                        "options": ["Happy", "Sad", "Excited", "Calm"],
+                        "correct_answer": "Happy",
+                        "explanation": "The text has a positive tone."
+                    },
+                    {
+                        "question": "What is the key message?",
+                        "type": "multiple_choice",
+                        "options": ["Be kind", "Work hard", "Stay curious", "Help others"],
+                        "correct_answer": "Be kind",
+                        "explanation": "Kindness is emphasized throughout."
+                    },
+                    {
+                        "question": "Who is the main character?",
+                        "type": "multiple_choice",
+                        "options": ["A student", "A teacher", "A parent", "A friend"],
+                        "correct_answer": "A student",
+                        "explanation": "The story follows a student's journey."
+                    },
+                    {
+                        "question": "Where does the story take place?",
+                        "type": "multiple_choice",
+                        "options": ["School", "Home", "Park", "Library"],
+                        "correct_answer": "School",
+                        "explanation": "Most events happen at school."
+                    },
+                    # True/False Questions
+                    {
+                        "question": "The text teaches about emotions.",
+                        "type": "true_false",
+                        "correct_answer": "True",
+                        "explanation": "Emotional learning is a key theme."
+                    },
+                    {
+                        "question": "The story has a sad ending.",
+                        "type": "true_false",
+                        "correct_answer": "False",
+                        "explanation": "The ending is positive and uplifting."
+                    },
+                    {
+                        "question": "Friends help each other in the story.",
+                        "type": "true_false",
+                        "correct_answer": "True",
+                        "explanation": "Friendship and support are important themes."
+                    },
+                    {
+                        "question": "The main character gives up easily.",
+                        "type": "true_false",
+                        "correct_answer": "False",
+                        "explanation": "The character shows perseverance."
+                    },
+                    {
+                        "question": "Learning new things is important in the story.",
+                        "type": "true_false",
+                        "correct_answer": "True",
+                        "explanation": "Growth and learning are central themes."
+                    },
+                    # Fill in the Blank Questions
+                    {
+                        "question": "The main theme of the text is about ___.",
+                        "type": "fill_blank",
+                        "correct_answer": "learning",
+                        "explanation": "Learning is the central focus."
+                    },
+                    {
+                        "question": "The character feels ___ at the end.",
+                        "type": "fill_blank",
+                        "correct_answer": "happy",
+                        "explanation": "The ending brings happiness."
+                    },
+                    {
+                        "question": "Good friends always ___ each other.",
+                        "type": "fill_blank",
+                        "correct_answer": "help",
+                        "explanation": "Helping is what friends do."
+                    },
+                    {
+                        "question": "When we face challenges, we should ___.",
+                        "type": "fill_blank",
+                        "correct_answer": "persevere",
+                        "explanation": "Perseverance helps us overcome difficulties."
+                    },
+                    {
+                        "question": "Understanding our emotions helps us ___.",
+                        "type": "fill_blank",
+                        "correct_answer": "grow",
+                        "explanation": "Emotional awareness supports personal growth."
+                    },
+                    # Match the Pair Questions
+                    {
+                        "question": "Match: Kindness",
+                        "type": "match_pair",
+                        "options": ["Being mean", "Helping others", "Ignoring people", "Being selfish"],
+                        "correct_answer": "Helping others",
+                        "explanation": "Kindness means helping and caring for others."
+                    },
+                    {
+                        "question": "Match: Friendship",
+                        "type": "match_pair",
+                        "options": ["Fighting", "Supporting each other", "Being alone", "Competing"],
+                        "correct_answer": "Supporting each other",
+                        "explanation": "Friends support and care for one another."
+                    },
+                    {
+                        "question": "Match: Learning",
+                        "type": "match_pair",
+                        "options": ["Giving up", "Trying new things", "Staying the same", "Avoiding challenges"],
+                        "correct_answer": "Trying new things",
+                        "explanation": "Learning involves exploring and trying new things."
+                    },
+                    {
+                        "question": "Match: Emotions",
+                        "type": "match_pair",
+                        "options": ["Ignoring feelings", "Understanding feelings", "Hiding feelings", "Forgetting feelings"],
+                        "correct_answer": "Understanding feelings",
+                        "explanation": "Emotional intelligence means understanding our feelings."
+                    },
+                    {
+                        "question": "Match: Growth",
+                        "type": "match_pair",
+                        "options": ["Staying stuck", "Moving forward", "Going backward", "Standing still"],
+                        "correct_answer": "Moving forward",
+                        "explanation": "Growth means progressing and moving forward."
                     }
                 ]
             }
@@ -867,6 +1024,12 @@ Format as JSON:
         
         # Try to parse JSON from response
         try:
+            # Remove markdown code blocks if present
+            if '```json' in story_text:
+                story_text = story_text.split('```json')[1].split('```')[0].strip()
+            elif '```' in story_text:
+                story_text = story_text.split('```')[1].split('```')[0].strip()
+            
             story_data = json.loads(story_text)
             return story_data
         except:
@@ -1346,8 +1509,67 @@ def display_processed_content():
     with tab4:
         st.markdown("### 📚 Story Time!")
         
+        # Check for direct story first (generated immediately on upload)
+        if hasattr(st.session_state, 'direct_story') and st.session_state.direct_story:
+            story_data = st.session_state.direct_story
+            
+            st.markdown(f"""
+                <div style='background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); 
+                            padding: 25px; border-radius: 20px; 
+                            box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 20px;'>
+                    <div style='text-align: center; font-size: 1.8em; color: #667eea; 
+                                font-weight: bold; margin-bottom: 15px;'>
+                        {story_data.get('title', 'Your Story')}
+                    </div>
+                    <div style='font-size: 1.1em; line-height: 1.8; color: #333; white-space: pre-line;'>
+                        {story_data.get('story', '')}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            if story_data.get('reflection_question'):
+                st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); 
+                                padding: 20px; border-radius: 15px; margin: 20px 0;'>
+                        <div style='font-size: 1.2em; color: #667eea; font-weight: bold; margin-bottom: 10px;'>
+                            💭 Think About This:
+                        </div>
+                        <div style='font-size: 1.05em; color: #333; line-height: 1.6;'>
+                            {story_data.get('reflection_question', '')}
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Story feedback
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("#### 🎭 Did you like this story?")
+            
+            if 'direct_story_dislike_count' not in st.session_state:
+                st.session_state.direct_story_dislike_count = 0
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("❤️ Loved it!", use_container_width=True, key="direct_story_like"):
+                    st.balloons()
+                    st.success("🎉 Awesome! I'm so glad you enjoyed it!")
+                    st.session_state.direct_story_dislike_count = 0
+            
+            with col2:
+                if st.button("👎 Dislike", use_container_width=True, key="direct_story_dislike"):
+                    st.session_state.direct_story_dislike_count += 1
+                    
+                    if st.session_state.direct_story_dislike_count == 1:
+                        with st.spinner("✨ Generating a different story for you..."):
+                            new_story = generate_story_direct(content.get('cleaned_text', ''), st.session_state.grade_level)
+                            if new_story:
+                                st.session_state.direct_story = new_story
+                                st.success("✅ New story generated!")
+                                time_module.sleep(1)
+                                st.rerun()
+        
         # Check if we have AWS results
-        if st.session_state.aws_results:
+        elif st.session_state.aws_results:
             results = st.session_state.aws_results.get('results', {})
             story_result = results.get('story', {})
             
@@ -1642,14 +1864,31 @@ def display_aws_quiz(quiz_data):
     if 'quiz_answers' not in st.session_state:
         st.session_state.quiz_answers = {}
     
-    # Display each question
+    # Display each question with type badges
     for i, q in enumerate(questions):
-        st.markdown(f"### Question {i+1}")
-        st.markdown(f"**{q.get('question', '')}**")
+        q_type = q.get('type', 'multiple_choice')
+        
+        # Type badge
+        type_badges = {
+            'multiple_choice': '🔵 Multiple Choice',
+            'true_false': '🟢 True/False',
+            'fill_blank': '🟡 Fill in the Blank',
+            'match_pair': '🟣 Match the Pair'
+        }
+        badge = type_badges.get(q_type, '❓ Question')
+        
+        st.markdown(f"""
+            <div style='background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); 
+                        padding: 15px; border-radius: 10px; margin: 20px 0 10px 0;'>
+                <span style='font-size: 0.9em; color: #2d3748; font-weight: 600;'>{badge}</span>
+                <div style='font-size: 1.3em; color: #2d3748; font-weight: bold; margin-top: 8px;'>
+                    Question {i+1}: {q.get('question', '')}
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Handle different question types
-        q_type = q.get('type', 'multiple_choice')
         
         if q_type == 'multiple_choice':
             options = q.get('options', [])
@@ -1678,8 +1917,42 @@ def display_aws_quiz(quiz_data):
                 label_visibility="collapsed"
             )
             st.session_state.quiz_answers[i] = answer
+            
+        elif q_type == 'match_pair':
+            options = q.get('options', [])
+            answer = st.selectbox(
+                "Match with:",
+                options,
+                key=f"quiz_q_{i}",
+                label_visibility="collapsed"
+            )
+            st.session_state.quiz_answers[i] = answer
         
         st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # Show quiz summary
+    st.markdown("---")
+    st.markdown("### 📊 Quiz Summary")
+    
+    # Count question types
+    type_counts = {}
+    for q in questions:
+        q_type = q.get('type', 'multiple_choice')
+        type_counts[q_type] = type_counts.get(q_type, 0) + 1
+    
+    type_names = {
+        'multiple_choice': '🔵 Multiple Choice',
+        'true_false': '🟢 True/False',
+        'fill_blank': '🟡 Fill in the Blank',
+        'match_pair': '🟣 Match the Pair'
+    }
+    
+    cols = st.columns(4)
+    for idx, (q_type, count) in enumerate(type_counts.items()):
+        with cols[idx % 4]:
+            st.metric(type_names.get(q_type, q_type), f"{count} questions")
+    
+    st.markdown("---")
     
     # Submit button
     col1, col2, col3 = st.columns([1, 2, 1])
