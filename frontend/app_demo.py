@@ -3767,7 +3767,12 @@ def teacher_interface():
                 st.session_state.teacher_id = None
                 st.rerun()
 
-def display_lesson_plan(plan):
+def generate_lesson_plan_pdf(plan):
+    """Generate a PDF version of the lesson plan"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    story = []
+    styles = getSampleStyleS
     st.markdown(f"""
         <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                     padding: 30px; border-radius: 20px; text-align: center;
