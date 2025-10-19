@@ -184,12 +184,12 @@ st.markdown("""
     /* Special styling for main page Student/Teacher buttons */
     .stButton > button[key*="student_btn" i], 
     .stButton > button[key*="teacher_btn" i] {
-        font-size: 2.2em !important;
-        padding: 25px 40px !important;
-        min-height: 100px !important;
-        font-weight: 800 !important;
-        letter-spacing: 2px !important;
-        border-radius: 20px !important;
+        font-size: 4.2em !important;
+        padding: 35px 50px !important;
+        min-height: 120px !important;
+        font-weight: 900 !important;
+        letter-spacing: 3px !important;
+        border-radius: 25px !important;
     }
     
     /* Question input styling */
@@ -347,7 +347,7 @@ st.markdown("""
         .stButton > button[kind="primary"],
         .stButton > button[kind="secondary"] {
             padding: 30px 40px !important;
-            font-size: 1.8em !important;
+            font-size: 3.2em !important;
             height: 140px !important;
             min-width: 200px !important;
         }
@@ -419,7 +419,7 @@ st.markdown("""
     .stButton > button[kind="primary"],
     .stButton > button[kind="secondary"] {
         padding: 50px 60px !important;
-        font-size: 2.5em !important;
+        font-size: 3.8em !important;
         height: 180px !important;
         border-radius: 12px !important;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2) !important;
