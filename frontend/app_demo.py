@@ -1186,6 +1186,7 @@ def create_content_specific_quiz(text, grade_level):
             "explanation": "Reading helps us gain knowledge and understanding."
         })
     
+    # Add exactly 3 more fill-in-the-blank questions to make 5 total
     questions.extend([
         {
             "question": "Understanding this content requires ___ reading.",
@@ -1225,6 +1226,7 @@ def create_content_specific_quiz(text, grade_level):
             "explanation": "Learning involves trying new things and being curious."
         })
     
+    # Add exactly 4 more match-the-pair questions to make 5 total
     questions.extend([
         {
             "question": "Match: Reading",
@@ -1253,61 +1255,6 @@ def create_content_specific_quiz(text, grade_level):
             "options": ["Staying the same", "Becoming better", "Going backward", "Not trying"],
             "correct_answer": "Becoming better",
             "explanation": "Growth means becoming better and improving ourselves."
-        }
-    ])
-    
-    # Additional quiz questions for learning theme
-    questions.extend([
-        {
-            "question": "Good students always ___ carefully.",
-            "type": "fill_blank",
-            "correct_answer": "read",
-            "explanation": "Careful reading is essential for learning."
-        },
-        {
-            "question": "Learning new concepts requires ___.",
-            "type": "fill_blank",
-            "correct_answer": "practice",
-            "explanation": "Practice helps us master new concepts."
-        }
-    ])
-    
-    # Match the Pair Questions (5)
-    questions.extend([
-        {
-            "question": "Match: Learning",
-            "type": "match_pair",
-            "options": ["Ignoring content", "Studying carefully", "Skipping pages", "Not paying attention"],
-            "correct_answer": "Studying carefully",
-            "explanation": "Learning requires careful study and attention."
-        },
-        {
-            "question": "Match: Knowledge",
-            "type": "match_pair",
-            "options": ["Forgetting facts", "Understanding concepts", "Avoiding study", "Ignoring lessons"],
-            "correct_answer": "Understanding concepts", 
-            "explanation": "Knowledge comes from understanding concepts."
-        },
-        {
-            "question": "Match: Education",
-            "type": "match_pair",
-            "options": ["Avoiding books", "Reading and learning", "Skipping class", "Not studying"],
-            "correct_answer": "Reading and learning",
-            "explanation": "Education involves reading and continuous learning."
-        },
-        {
-            "question": "Match: Understanding",
-            "type": "match_pair",
-            "options": ["Being confused", "Grasping concepts", "Not listening", "Giving up"],
-            "correct_answer": "Grasping concepts",
-            "explanation": "Understanding means grasping and comprehending concepts."
-        },
-        {
-            "question": "Match: Study",
-            "type": "match_pair", 
-            "options": ["Playing games", "Focused learning", "Watching TV", "Sleeping"],
-            "correct_answer": "Focused learning",
-            "explanation": "Study involves focused attention on learning material."
         }
     ])
     
