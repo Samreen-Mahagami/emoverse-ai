@@ -3645,7 +3645,7 @@ def teacher_interface():
                                 st.info("📋 AI-generated lesson plan based on your uploaded content:")
                                 
                                 # Debug: Show lesson plan structure
-                                with st.expander("🔍 Debug: Lesson Plan Data", expanded=False):
+                                with st.expander("Generating lesson plan", expanded=False):
                                     st.json(lesson_plan)
                                 
                                 display_lesson_plan(lesson_plan)
