@@ -1646,6 +1646,242 @@ def search_external_stories(topic, grade_level, emotional_theme=None):
         st.error(f"Error searching external stories: {str(e)}")
         return None
 
+def generate_lesson_plan_from_content(extracted_text, grade_level, duration):
+    """Generate lesson plan based on actual uploaded content using Bedrock"""
+    try:
+        import boto3
+        bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
+        
+        # Calculate phase durations based on total duration
+        def round_to_5(value):
+            return max(5, round(value / 5) * 5)
+        
+        warmup_time = round_to_5(duration * 0.20)  # 20% of total
+        main_time = round_to_5(duration * 0.45)    # 45% of total
+        extension_time = round_to_5(duration * 0.25)  # 25% of total
+        assessment_time = max(5, duration - warmup_time - main_time - extension_time)
+        
+        prompt = f"""Based on this educational content, create a SIMPLE lesson plan for Grade {grade_level} students.
+
+CONTENT TO ANALYZE:
+{extracted_text[:2000]}
+
+LESSON PLAN REQUIREMENTS:
+- Duration: {duration} minutes total
+- Grade Level: {grade_level}
+- Keep activities SIMPLE and easy to implement
+- Focus on basic reading comprehension and discussion
+
+STRUCTURE NEEDED:
+1. Simple lesson title based on the content
+2. 3 basic learning objectives
+3. Four simple phases:
+   - Warm-up ({warmup_time} minutes): Simple opening activities
+   - Reading & Discussion ({main_time} minutes): Read content and discuss
+   - Practice Activity ({extension_time} minutes): Simple hands-on activity
+   - Wrap-up ({assessment_time} minutes): Quick check for understanding
+
+KEEP IT SIMPLE:
+- Use basic classroom activities (reading, discussion, drawing, sharing)
+- Make activities easy for teachers to implement
+- Focus on comprehension and basic SEL concepts
+- Use simple language appropriate for Grade {grade_level}
+
+Format as JSON:
+{{
+  "lesson_title": "Title based on actual content",
+  "grade_level": {grade_level},
+  "duration_minutes": {duration},
+  "content_source": "Based on uploaded material",
+  "learning_objectives": [
+    "Objective 1 related to content",
+    "Objective 2 related to content", 
+    "Objective 3 related to content"
+  ],
+  "sel_competencies": ["Competency 1", "Competency 2", "Competency 3"],
+  "phases": {{
+    "warmup": {{
+      "duration_minutes": {warmup_time},
+      "activities": ["Activity 1 using content", "Activity 2 using content"]
+    }},
+    "main_activity": {{
+      "duration_minutes": {main_time},
+      "activities": ["Main activity 1", "Main activity 2", "Main activity 3"]
+    }},
+    "extension": {{
+      "duration_minutes": {extension_time},
+      "activities": ["Extension 1", "Extension 2"]
+    }},
+    "assessment": {{
+      "duration_minutes": {assessment_time},
+      "methods": ["Assessment method 1", "Assessment method 2"]
+    }}
+  }}
+}}"""
+
+        response = bedrock.invoke_model(
+            modelId='arn:aws:bedrock:us-east-1:089580247707:inference-profile/global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+            body=json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 1200,
+                "messages": [{
+                    "role": "user",
+                    "content": prompt
+                }]
+            })
+        )
+        
+        result = json.loads(response['body'].read())
+        lesson_text = result['content'][0]['text']
+        
+        # Try to parse JSON from response
+        try:
+            # Remove markdown code blocks if present
+            if '```json' in lesson_text:
+                lesson_text = lesson_text.split('```json')[1].split('```')[0].strip()
+            elif '```' in lesson_text:
+                lesson_text = lesson_text.split('```')[1].split('```')[0].strip()
+            
+            lesson_plan = json.loads(lesson_text)
+            return lesson_plan
+        except:
+            # Fallback: Create content-aware lesson plan manually
+            return create_content_based_lesson_plan(extracted_text, grade_level, duration)
+            
+    except Exception as e:
+        # Fallback to content-based lesson plan
+        return create_content_based_lesson_plan(extracted_text, grade_level, duration)
+
+def create_content_based_lesson_plan(extracted_text, grade_level, duration):
+    """Create lesson plan based on content analysis when AI fails"""
+    
+    # Analyze the content for themes and concepts
+    text_lower = extracted_text.lower()
+    
+    # Extract key themes
+    themes = []
+    if 'friend' in text_lower or 'friendship' in text_lower:
+        themes.append('friendship')
+    if 'emotion' in text_lower or 'feel' in text_lower:
+        themes.append('emotions')
+    if 'kind' in text_lower or 'kindness' in text_lower:
+        themes.append('kindness')
+    if 'learn' in text_lower or 'school' in text_lower:
+        themes.append('learning')
+    if 'family' in text_lower:
+        themes.append('family')
+    
+    # Extract potential character names
+    import re
+    characters = re.findall(r'\b[A-Z][a-z]+\b', extracted_text)
+    characters = [name for name in characters if len(name) > 2 and name not in ['The', 'And', 'But', 'For', 'Page']][:3]
+    
+    # Create lesson title based on content
+    if themes:
+        main_theme = themes[0].title()
+        if characters:
+            lesson_title = f"Exploring {main_theme} with {characters[0]}"
+        else:
+            lesson_title = f"Understanding {main_theme} Through Literature"
+    else:
+        lesson_title = "Social-Emotional Learning Through Reading"
+    
+    # Calculate durations
+    def round_to_5(value):
+        return max(5, round(value / 5) * 5)
+    
+    warmup_time = round_to_5(duration * 0.20)
+    main_time = round_to_5(duration * 0.45)
+    extension_time = round_to_5(duration * 0.25)
+    assessment_time = max(5, duration - warmup_time - main_time - extension_time)
+    
+    # Create SIMPLE content-specific activities
+    warmup_activities = []
+    main_activities = []
+    extension_activities = []
+    assessment_methods = []
+    
+    if 'friendship' in themes:
+        warmup_activities = ['Circle time: What makes a good friend?', 'Share about your best friend']
+        main_activities = ['Read the story together', 'Talk about friendship in the story', 'Discuss: How do friends help each other?']
+        extension_activities = ['Draw your favorite friendship moment', 'Practice being a good friend']
+        assessment_methods = ['Share one thing you learned about friendship', 'Quick thumbs up/down: Did you like the story?']
+    elif 'emotions' in themes:
+        warmup_activities = ['Show how you feel today with your face', 'Name different emotions']
+        main_activities = ['Read the story together', 'Talk about feelings in the story', 'Share: When do you feel happy/sad?']
+        extension_activities = ['Draw different emotions', 'Practice showing feelings with faces']
+        assessment_methods = ['Share one feeling from the story', 'Show me a happy face/sad face']
+    elif 'kindness' in themes:
+        warmup_activities = ['Share one kind thing you did', 'Talk about being kind']
+        main_activities = ['Read the story together', 'Find kind actions in the story', 'Discuss: How can we be kind?']
+        extension_activities = ['Draw someone being kind', 'Practice kind words']
+        assessment_methods = ['Share one way to be kind', 'Tell about kindness in the story']
+    else:
+        warmup_activities = ['Look at the book cover - what do you see?', 'Guess what the story is about']
+        main_activities = ['Read the story together', 'Talk about what happened', 'Share your favorite part']
+        extension_activities = ['Draw your favorite part', 'Act out a scene from the story']
+        assessment_methods = ['Tell what the story was about', 'Share what you learned']
+    
+    # Select appropriate SEL competencies
+    sel_competencies = ['Self-awareness', 'Social awareness', 'Relationship skills']
+    if 'emotions' in themes:
+        sel_competencies = ['Self-awareness', 'Self-management', 'Social awareness']
+    elif 'friendship' in themes:
+        sel_competencies = ['Social awareness', 'Relationship skills', 'Responsible decision-making']
+    
+    # Create SIMPLE learning objectives
+    if 'friendship' in themes:
+        learning_objectives = [
+            "Students will listen to and understand the story",
+            "Students will talk about friendship",
+            "Students will share their own friendship experiences"
+        ]
+    elif 'emotions' in themes:
+        learning_objectives = [
+            "Students will listen to and understand the story", 
+            "Students will identify different feelings",
+            "Students will talk about their own emotions"
+        ]
+    elif 'kindness' in themes:
+        learning_objectives = [
+            "Students will listen to and understand the story",
+            "Students will recognize kind actions", 
+            "Students will practice being kind"
+        ]
+    else:
+        learning_objectives = [
+            "Students will listen to and understand the story",
+            "Students will participate in class discussion",
+            "Students will share their thoughts about the story"
+        ]
+    
+    return {
+        'lesson_title': lesson_title,
+        'grade_level': grade_level,
+        'duration_minutes': duration,
+        'content_source': 'Based on uploaded material',
+        'learning_objectives': learning_objectives,
+        'sel_competencies': sel_competencies,
+        'phases': {
+            'warmup': {
+                'duration_minutes': warmup_time,
+                'activities': warmup_activities
+            },
+            'reading_discussion': {
+                'duration_minutes': main_time,
+                'activities': main_activities
+            },
+            'practice_activity': {
+                'duration_minutes': extension_time,
+                'activities': extension_activities
+            },
+            'wrap_up': {
+                'duration_minutes': assessment_time,
+                'methods': assessment_methods
+            }
+        }
+    }
+
 def get_student_analytics(student_id):
     """Get student analytics from DynamoDB and session state"""
     try:
@@ -3513,60 +3749,52 @@ def teacher_interface():
                 generate_button = st.button("Generate Lesson Plan", use_container_width=True)
             
             if generate_button:
-                # Auto-scroll to top of generated content
-                st.markdown('<div id="lesson-plan-top"></div>', unsafe_allow_html=True)
-                
-                # JavaScript to scroll to top
-                st.markdown("""
-                    <script>
-                        window.scrollTo({top: 0, behavior: 'smooth'});
-                    </script>
-                """, unsafe_allow_html=True)
-                
-                st.success("✅ Lesson plan generated successfully!")
-                st.info("📋 AI-generated lesson plan based on your content:")
-                
-                # Demo lesson plan with dynamic duration
-                # Calculate phase durations based on total duration - rounded to 5 minute intervals
-                def round_to_5(value):
-                    return max(5, round(value / 5) * 5)
-                
-                warmup_time = round_to_5(duration * 0.20)  # 20% of total
-                main_time = round_to_5(duration * 0.45)    # 45% of total
-                extension_time = round_to_5(duration * 0.25)  # 25% of total
-                assessment_time = max(5, duration - warmup_time - main_time - extension_time)  # Remaining time
-                
-                lesson_plan = {
-                    'lesson_title': 'Understanding Emotions and Empathy',
-                    'grade_level': grade_level,
-                    'duration_minutes': duration,
-                    'learning_objectives': [
-                        'Students will identify different emotions',
-                        'Students will practice empathy skills',
-                        'Students will understand how to help others'
-                    ],
-                    'sel_competencies': ['Self-awareness', 'Social awareness', 'Relationship skills'],
-                    'phases': {
-                        'warmup': {
-                            'duration_minutes': warmup_time,
-                            'activities': ['Emotion charades game', 'Share how you feel today']
-                        },
-                        'main_activity': {
-                            'duration_minutes': main_time,
-                            'activities': ['Read story about friendship', 'Discuss characters\' feelings', 'Role-play scenarios']
-                        },
-                        'extension': {
-                            'duration_minutes': extension_time,
-                            'activities': ['Create emotion cards', 'Write about a time you helped someone']
-                        },
-                        'assessment': {
-                            'duration_minutes': assessment_time,
-                            'methods': ['Exit ticket: Name 3 emotions', 'Share one way to show empathy']
-                        }
-                    }
-                }
-                
-                display_lesson_plan(lesson_plan)
+                if not uploaded_file:
+                    st.error("📎 Please upload a file first to generate a lesson plan!")
+                else:
+                    # Process the uploaded file to extract content
+                    with st.spinner("📖 Analyzing your uploaded content..."):
+                        try:
+                            # Extract text from uploaded file
+                            extracted_text = ""
+                            
+                            if uploaded_file.name.lower().endswith('.pdf'):
+                                try:
+                                    import PyPDF2
+                                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                                    
+                                    # Extract text from first 10 pages for lesson planning
+                                    max_pages = min(10, len(pdf_reader.pages))
+                                    for page_num in range(max_pages):
+                                        try:
+                                            page_text = pdf_reader.pages[page_num].extract_text()
+                                            if page_text.strip():
+                                                extracted_text += page_text + "\n"
+                                        except:
+                                            continue
+                                except:
+                                    extracted_text = f"PDF Document: {uploaded_file.name}\nContent will be analyzed for lesson planning."
+                            
+                            elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                                # For images, we'll create a lesson plan based on visual content analysis
+                                extracted_text = f"Visual Content: {uploaded_file.name}\nImage-based learning material for visual analysis and discussion."
+                            
+                            if not extracted_text.strip():
+                                extracted_text = f"Educational Content: {uploaded_file.name}\nContent-based learning material for classroom instruction."
+                            
+                            # Generate content-based lesson plan using AI
+                            lesson_plan = generate_lesson_plan_from_content(extracted_text, grade_level, duration)
+                            
+                            if lesson_plan:
+                                st.success("✅ Lesson plan generated successfully!")
+                                st.info("📋 AI-generated lesson plan based on your uploaded content:")
+                                display_lesson_plan(lesson_plan)
+                            else:
+                                st.error("❌ Failed to generate lesson plan. Please try again.")
+                                
+                        except Exception as e:
+                            st.error(f"❌ Error processing file: {str(e)}")
+                            st.info("💡 Please try uploading a different file or check the file format.")
         
         with tab2:
             st.header("Student Analytics Dashboard")
@@ -3756,17 +3984,17 @@ LEARNING OBJECTIVES:
 SEL COMPETENCIES:
 {', '.join(plan.get('sel_competencies', []))}
 
-WARM-UP PHASE ({plan.get('phases', {}).get('warmup', {}).get('duration_minutes', 0)} minutes):
+WARM-UP ({plan.get('phases', {}).get('warmup', {}).get('duration_minutes', 0)} minutes):
 {chr(10).join('- ' + act for act in plan.get('phases', {}).get('warmup', {}).get('activities', []))}
 
-MAIN ACTIVITY ({plan.get('phases', {}).get('main_activity', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('- ' + act for act in plan.get('phases', {}).get('main_activity', {}).get('activities', []))}
+READING & DISCUSSION ({plan.get('phases', {}).get('reading_discussion', {}).get('duration_minutes', 0)} minutes):
+{chr(10).join('- ' + act for act in plan.get('phases', {}).get('reading_discussion', {}).get('activities', []))}
 
-EXTENSION ({plan.get('phases', {}).get('extension', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('- ' + act for act in plan.get('phases', {}).get('extension', {}).get('activities', []))}
+PRACTICE ACTIVITY ({plan.get('phases', {}).get('practice_activity', {}).get('duration_minutes', 0)} minutes):
+{chr(10).join('- ' + act for act in plan.get('phases', {}).get('practice_activity', {}).get('activities', []))}
 
-ASSESSMENT ({plan.get('phases', {}).get('assessment', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('- ' + method for method in plan.get('phases', {}).get('assessment', {}).get('methods', []))}
+WRAP-UP ({plan.get('phases', {}).get('wrap_up', {}).get('duration_minutes', 0)} minutes):
+{chr(10).join('- ' + method for method in plan.get('phases', {}).get('wrap_up', {}).get('methods', []))}
 """
     
     st.download_button(
@@ -3811,44 +4039,44 @@ ASSESSMENT ({plan.get('phases', {}).get('assessment', {}).get('duration_minutes'
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Main Activity - Simple card layout
-    main = phases.get('main_activity', {})
+    # Reading & Discussion - Simple card layout
+    reading = phases.get('reading_discussion', {})
     st.markdown("""
         <div style='background: rgba(102, 126, 234, 0.1); padding: 20px; border-radius: 12px; margin: 15px 0; border-left: 5px solid #667eea;'>
-            <h3 style='color: #667eea; margin: 0 0 15px 0;'>📚 Main Activity</h3>
+            <h3 style='color: #667eea; margin: 0 0 15px 0;'>📖 Reading & Discussion</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {main.get('duration_minutes')} minutes")
+    st.markdown(f"**Duration:** {reading.get('duration_minutes')} minutes")
     st.markdown("**Activities:**")
-    for activity in main.get('activities', []):
+    for activity in reading.get('activities', []):
         st.markdown(f"• {activity}")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Extension - Simple card layout
-    ext = phases.get('extension', {})
+    # Practice Activity - Simple card layout
+    practice = phases.get('practice_activity', {})
     st.markdown("""
         <div style='background: rgba(245, 158, 11, 0.1); padding: 20px; border-radius: 12px; margin: 15px 0; border-left: 5px solid #f59e0b;'>
-            <h3 style='color: #f59e0b; margin: 0 0 15px 0;'>🚀 Extension</h3>
+            <h3 style='color: #f59e0b; margin: 0 0 15px 0;'>✏️ Practice Activity</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {ext.get('duration_minutes')} minutes")
+    st.markdown(f"**Duration:** {practice.get('duration_minutes')} minutes")
     st.markdown("**Activities:**")
-    for activity in ext.get('activities', []):
+    for activity in practice.get('activities', []):
         st.markdown(f"• {activity}")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Assessment - Simple card layout
-    assess = phases.get('assessment', {})
+    # Wrap-up - Simple card layout
+    wrapup = phases.get('wrap_up', {})
     st.markdown("""
         <div style='background: rgba(16, 185, 129, 0.1); padding: 20px; border-radius: 12px; margin: 15px 0; border-left: 5px solid #10b981;'>
-            <h3 style='color: #10b981; margin: 0 0 15px 0;'>✅ Assessment</h3>
+            <h3 style='color: #10b981; margin: 0 0 15px 0;'>🎯 Wrap-up</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {assess.get('duration_minutes')} minutes")
-    st.markdown("**Methods:**")
-    for method in assess.get('methods', []):
+    st.markdown(f"**Duration:** {wrapup.get('duration_minutes')} minutes")
+    st.markdown("**Activities:**")
+    for method in wrapup.get('methods', []):
         st.markdown(f"• {method}")
 
 if __name__ == "__main__":
