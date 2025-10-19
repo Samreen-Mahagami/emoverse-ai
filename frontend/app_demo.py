@@ -3836,52 +3836,76 @@ WRAP-UP ({plan.get('phases', {}).get('wrap_up', {}).get('duration_minutes', 0)} 
             <h3 style='color: #ff6b6b; margin: 0 0 15px 0;'>🔥 Warm-up Phase</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {warmup.get('duration_minutes')} minutes")
+    st.markdown(f"**Duration:** {warmup.get('duration_minutes', 'Not set')} minutes")
     st.markdown("**Activities:**")
-    for activity in warmup.get('activities', []):
-        st.markdown(f"• {activity}")
+    activities = warmup.get('activities', [])
+    if activities:
+        for activity in activities:
+            st.markdown(f"• {activity}")
+    else:
+        st.markdown("• Circle time discussion")
+        st.markdown("• Share experiences with the group")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Reading & Discussion - Simple card layout
-    reading = phases.get('reading_discussion', {})
+    # Reading & Discussion - Handle both key names (reading_discussion or main_activity)
+    reading = phases.get('reading_discussion', phases.get('main_activity', {}))
     st.markdown("""
         <div style='background: rgba(102, 126, 234, 0.1); padding: 20px; border-radius: 12px; margin: 15px 0; border-left: 5px solid #667eea;'>
             <h3 style='color: #667eea; margin: 0 0 15px 0;'>📖 Reading & Discussion</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {reading.get('duration_minutes')} minutes")
+    st.markdown(f"**Duration:** {reading.get('duration_minutes', 'Not set')} minutes")
     st.markdown("**Activities:**")
-    for activity in reading.get('activities', []):
-        st.markdown(f"• {activity}")
+    activities = reading.get('activities', [])
+    if activities:
+        for activity in activities:
+            st.markdown(f"• {activity}")
+    else:
+        st.markdown("• Read the content together")
+        st.markdown("• Discuss main ideas")
+        st.markdown("• Share thoughts and questions")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Practice Activity - Simple card layout
-    practice = phases.get('practice_activity', {})
+    # Practice Activity - Handle both key names (practice_activity or extension)
+    practice = phases.get('practice_activity', phases.get('extension', {}))
     st.markdown("""
         <div style='background: rgba(245, 158, 11, 0.1); padding: 20px; border-radius: 12px; margin: 15px 0; border-left: 5px solid #f59e0b;'>
             <h3 style='color: #f59e0b; margin: 0 0 15px 0;'>✏️ Practice Activity</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {practice.get('duration_minutes')} minutes")
+    st.markdown(f"**Duration:** {practice.get('duration_minutes', 'Not set')} minutes")
     st.markdown("**Activities:**")
-    for activity in practice.get('activities', []):
-        st.markdown(f"• {activity}")
+    activities = practice.get('activities', [])
+    if activities:
+        for activity in activities:
+            st.markdown(f"• {activity}")
+    else:
+        st.markdown("• Draw or write about the content")
+        st.markdown("• Practice key concepts")
+        st.markdown("• Work on related activities")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Wrap-up - Simple card layout
-    wrapup = phases.get('wrap_up', {})
+    # Wrap-up - Handle both key names (wrap_up or assessment)
+    wrapup = phases.get('wrap_up', phases.get('assessment', {}))
     st.markdown("""
         <div style='background: rgba(16, 185, 129, 0.1); padding: 20px; border-radius: 12px; margin: 15px 0; border-left: 5px solid #10b981;'>
             <h3 style='color: #10b981; margin: 0 0 15px 0;'>🎯 Wrap-up</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {wrapup.get('duration_minutes')} minutes")
+    st.markdown(f"**Duration:** {wrapup.get('duration_minutes', 'Not set')} minutes")
     st.markdown("**Activities:**")
-    for method in wrapup.get('methods', []):
-        st.markdown(f"• {method}")
+    # Handle both 'methods' and 'activities' keys
+    methods = wrapup.get('methods', wrapup.get('activities', []))
+    if methods:
+        for method in methods:
+            st.markdown(f"• {method}")
+    else:
+        st.markdown("• Share what you learned")
+        st.markdown("• Quick review of key points")
+        st.markdown("• Reflect on the lesson")
 
 if __name__ == "__main__":
     # Add floating help button and global styles
