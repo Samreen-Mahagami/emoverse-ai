@@ -1368,6 +1368,9 @@ def create_content_specific_quiz(text, grade_level):
             "explanation": "Growth means becoming better and improving ourselves."
         }
     ])
+    
+    # Additional quiz questions for learning theme
+    learning_quiz_questions.extend([
         {
             "question": "Good students always ___ carefully.",
             "type": "fill_blank",
