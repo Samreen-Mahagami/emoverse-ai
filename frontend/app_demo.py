@@ -2685,24 +2685,8 @@ def display_processed_content():
         if cleaned_text and len(cleaned_text.strip()) > 0:
             # Show success message
             st.success("✅ Text extracted successfully!")
-                method_info = {
-                    'pdfplumber': '✅ Text extracted using advanced PDF processing',
-                    'PyPDF2': '✅ Text extracted using standard PDF processing', 
-                    'aws_textract': '🤖 Text extracted using AI cloud processing',
-                    'text_file': '✅ Text file processed successfully',
-                    'image': '�️ ImPage uploaded - AI processing in progress',
-                    'fallback': '📄 PDF uploaded - AI processing in progress',
-                    'enhanced_fallback': '📄 PDF ready - AI content generation available',
-                    'generic': '✅ Document processed successfully',
-                    'generic_fallback': '📄 Document uploaded - processing in progress',
-                    'error_fallback': '⚠️ Basic processing completed'
-                }
-                # Removed extraction_method code
-                    # Removed extraction_method code
-                        st.info(method_info[extraction_method])
-                        st.success("🎉 Ready to create amazing learning content for you!")
-                    else:
-                        # Removed extraction_method code
+
+
             
             # Display text in a simple, reliable text area
             st.text_area(
