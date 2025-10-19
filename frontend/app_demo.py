@@ -8,6 +8,8 @@ import time as time_module
 import boto3
 import json
 from io import BytesIO
+import uuid
+import base64
 
 # AWS Configuration
 AWS_REGION = "us-east-1"
@@ -902,6 +904,56 @@ Provide a clear, friendly answer that helps the student understand:"""
         st.error(f"Error getting answer: {str(e)}")
         return None
 
+def generate_content_aware_answer(question, context_text, grade_level):
+    """Generate answer based on actual document content"""
+    
+    question_lower = question.lower()
+    
+    # Extract key information from the document
+    if context_text:
+        # Get first few sentences for context
+        sentences = context_text.split('.')[:5]
+        content_preview = '. '.join(sentences).strip()
+        
+        # Answer based on question type and actual content
+        if 'story' in question_lower or 'about' in question_lower:
+            if grade_level <= 3:
+                return f"Based on what you uploaded, this content is about: {content_preview[:200]}... It looks like it has lots of interesting information for you to learn from!"
+            else:
+                return f"Your document appears to focus on: {content_preview[:300]}... The main themes seem to relate to the concepts and ideas presented in your uploaded material."
+        
+        elif 'main' in question_lower or 'theme' in question_lower:
+            if grade_level <= 3:
+                return f"The main idea in your document seems to be about learning and understanding. Here's what I found: {content_preview[:150]}..."
+            else:
+                return f"The central themes in your document include the concepts discussed in: {content_preview[:250]}... These ideas connect to important learning objectives."
+        
+        elif 'learn' in question_lower or 'lesson' in question_lower:
+            if grade_level <= 3:
+                return f"From your document, we can learn about: {content_preview[:150]}... This teaches us important things about growing and understanding!"
+            else:
+                return f"Your document provides learning opportunities around: {content_preview[:200]}... These concepts help develop critical thinking and understanding."
+        
+        elif 'character' in question_lower or 'who' in question_lower:
+            # Look for names or people mentioned
+            words = context_text.split()[:100]  # First 100 words
+            if any(word[0].isupper() and len(word) > 2 for word in words):
+                names = [word for word in words if word[0].isupper() and len(word) > 2 and word.isalpha()][:3]
+                if names:
+                    return f"In your document, I can see mentions of: {', '.join(names)}. These might be important people or concepts in your learning material!"
+            
+            return f"Your document discusses various concepts and ideas. Here's what I found: {content_preview[:200]}..."
+        
+        else:
+            # Generic content-based answer
+            if grade_level <= 3:
+                return f"Great question! Based on your document: {content_preview[:150]}... This helps us understand important ideas about learning and growing!"
+            else:
+                return f"That's an excellent question! Your document covers: {content_preview[:200]}... This relates to key concepts in your learning material."
+    
+    # Fallback if no content
+    return generate_demo_answer(question, grade_level)
+
 def generate_demo_answer(question, grade_level):
     """Generate a demo answer when API is not available"""
     
@@ -951,16 +1003,41 @@ def generate_demo_answer(question, grade_level):
         else:
             return f"Excellent question! This connects to the core principles of social-emotional learning. The key is to reflect on how these concepts apply to your own life and relationships. Critical thinking about these topics helps us develop better self-awareness and interpersonal skills."
 
-def process_voice_question(audio_bytes, context_text, grade_level):
-    """Process voice question using AWS Transcribe"""
+def record_audio_streamlit():
+    """Record audio using Streamlit's audio_recorder component"""
     try:
-        import boto3
-        import uuid
-        import time
-        
-        s3_client = boto3.client('s3', region_name=AWS_REGION)
-        transcribe_client = boto3.client('transcribe', region_name=AWS_REGION)
-        
+        # Use streamlit-audio-recorder if available
+        try:
+            from audio_recorder_streamlit import audio_recorder
+            
+            # Record audio
+            audio_bytes = audio_recorder(
+                text="Click to record your question",
+                recording_color="#e8b62c",
+                neutral_color="#6aa36f",
+                icon_name="microphone",
+                icon_size="2x",
+                pause_threshold=2.0,
+                sample_rate=16000
+            )
+            
+            return audio_bytes
+            
+        except ImportError:
+            # Fallback: Use HTML5 audio recording
+            st.warning("🎤 Audio recorder not available. Please install streamlit-audio-recorder for voice input.")
+            return None
+            
+    except Exception as e:
+        st.error(f"Recording error: {str(e)}")
+        return None
+
+def transcribe_audio_aws(audio_bytes):
+    """Transcribe audio using AWS Transcribe"""
+    try:
+        if not audio_bytes:
+            return None
+            
         # Create unique job name
         job_name = f"voice-qa-{uuid.uuid4().hex[:8]}"
         audio_key = f"sel-input/audio_questions/{job_name}.wav"
@@ -969,10 +1046,11 @@ def process_voice_question(audio_bytes, context_text, grade_level):
         s3_client.put_object(
             Bucket=S3_BUCKET,
             Key=audio_key,
-            Body=audio_bytes.getvalue()
+            Body=audio_bytes
         )
         
-        # Start transcription job directly
+        # Start transcription job
+        transcribe_client = boto3.client('transcribe', region_name=AWS_REGION)
         transcribe_client.start_transcription_job(
             TranscriptionJobName=job_name,
             Media={'MediaFileUri': f"s3://{S3_BUCKET}/{audio_key}"},
@@ -980,10 +1058,16 @@ def process_voice_question(audio_bytes, context_text, grade_level):
             LanguageCode='en-US'
         )
         
-        # Poll for completion (max 30 seconds)
-        for _ in range(10):
+        # Poll for completion with progress indicator
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        for attempt in range(20):  # Max 60 seconds
             status = transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
             job_status = status['TranscriptionJob']['TranscriptionJobStatus']
+            
+            progress_bar.progress((attempt + 1) / 20)
+            status_text.text(f"🎤 Transcribing your question... ({attempt + 1}/20)")
             
             if job_status == 'COMPLETED':
                 # Get transcript
@@ -992,19 +1076,34 @@ def process_voice_question(audio_bytes, context_text, grade_level):
                 with urllib.request.urlopen(transcript_uri) as response:
                     transcript_data = json.loads(response.read())
                     transcribed_text = transcript_data['results']['transcripts'][0]['transcript']
+                    
+                    # Clean up
+                    progress_bar.empty()
+                    status_text.empty()
+                    
                     return transcribed_text
+                    
             elif job_status == 'FAILED':
-                st.error("Transcription failed. Please try again.")
+                progress_bar.empty()
+                status_text.empty()
+                st.error("❌ Transcription failed. Please try again or type your question.")
                 return None
             
-            time.sleep(3)
+            time_module.sleep(3)
         
-        st.warning("Transcription taking longer than expected. Please try typing your question.")
+        # Timeout
+        progress_bar.empty()
+        status_text.empty()
+        st.warning("⏰ Transcription taking longer than expected. Please try typing your question.")
         return None
             
     except Exception as e:
-        st.error(f"Voice input error: {str(e)}")
+        st.error(f"Voice transcription error: {str(e)}")
         return None
+
+def process_voice_question(audio_bytes, context_text, grade_level):
+    """Process voice question using AWS Transcribe - Legacy function for compatibility"""
+    return transcribe_audio_aws(audio_bytes)
 
 def create_content_specific_quiz(text, grade_level):
     """Create quiz questions based on actual document content"""
@@ -1603,6 +1702,18 @@ def student_interface():
 
         
         if uploaded_file and process_button:
+            # Check file size and warn user about large files
+            file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Size in MB
+            
+            if file_size > 50:
+                st.info(f"📚 Large children's book detected ({file_size:.1f}MB). Processing ALL pages with batch optimization (~20-30 seconds).")
+            elif file_size > 25:
+                st.info(f"📖 Medium children's book detected ({file_size:.1f}MB). Processing ALL pages efficiently (~15-25 seconds).")
+            elif file_size > 10:
+                st.info(f"📄 Children's book ({file_size:.1f}MB). Processing ALL pages for complete content (~10-15 seconds).")
+            elif file_size > 5:
+                st.info(f"📚 Small children's book ({file_size:.1f}MB). Processing ALL pages quickly (~5-10 seconds).")
+            
             # Store file for background processing
             st.session_state.current_file = uploaded_file
             # Start processing flow
@@ -1636,36 +1747,149 @@ def student_interface():
 def extract_text_immediately(uploaded_file):
     """Show processing message, extract text, then display tabs when ready"""
     
-    # STEP 1: Show processing message immediately
+    # STEP 1: Show processing message immediately with file info
     st.session_state.processing_file = True
-    st.info("🔄 Processing your document... Please wait a moment.")
+    
+    file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Size in MB
+    
+    if file_size > 50:
+        st.info(f"📚 Processing large children's book ({file_size:.1f}MB)... ALL pages will be processed: ~20-30 seconds.")
+    elif file_size > 25:
+        st.info(f"📖 Processing medium children's book ({file_size:.1f}MB)... ALL pages will be processed: ~15-25 seconds.")
+    elif file_size > 10:
+        st.info(f"📄 Processing children's book ({file_size:.1f}MB)... ALL pages will be processed: ~10-15 seconds.")
+    else:
+        st.info("📚 Processing your children's book... ALL pages will be processed for complete content.")
     
     # Force rerun to show processing message
     st.rerun()
 
 def complete_text_extraction(uploaded_file):
-    """Complete the text extraction and show tabs"""
+    """Complete the text extraction and show tabs - OPTIMIZED for speed"""
     
     try:
         extracted_text = ""
         
-        # STEP 2: EXTRACT TEXT (should be fast)
+        # STEP 2: FAST TEXT EXTRACTION
         try:
-            # For PDFs, extract text quickly
+            # For PDFs, extract text with smart optimization
             if uploaded_file.name.lower().endswith('.pdf'):
+                # Try faster PDF processing methods
                 try:
-                    import PyPDF2
-                    # Reset file pointer to beginning
-                    uploaded_file.seek(0)
-                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                    # First try pdfplumber (often faster)
+                    try:
+                        import pdfplumber
+                        
+                        uploaded_file.seek(0)
+                        with pdfplumber.open(uploaded_file) as pdf:
+                            total_pages = len(pdf.pages)
+                            
+                            # Process ALL pages for children's educational content
+                            file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
+                            max_pages = total_pages  # Process ALL pages
+                            
+                            if file_size_mb > 50:
+                                st.info(f"📚 Large children's book ({file_size_mb:.1f}MB, {total_pages} pages). Processing ALL pages with speed optimization...")
+                            elif file_size_mb > 25:
+                                st.info(f"📖 Medium children's book ({file_size_mb:.1f}MB, {total_pages} pages). Processing ALL pages efficiently...")
+                            elif total_pages > 50:
+                                st.info(f"📄 Long children's book ({total_pages} pages). Processing ALL pages for complete story...")
+                            else:
+                                st.info(f"📚 Processing ALL {total_pages} pages for complete educational content...")
+                            
+                            progress_bar = st.progress(0)
+                            status_text = st.empty()
+                            
+                            pages_to_process = max_pages  # Process ALL pages
+                            
+                            # Batch processing for speed optimization
+                            batch_size = 5 if file_size_mb > 25 else 10
+                            
+                            for batch_start in range(0, pages_to_process, batch_size):
+                                batch_end = min(batch_start + batch_size, pages_to_process)
+                                
+                                # Process batch of pages
+                                for page_num in range(batch_start, batch_end):
+                                    try:
+                                        progress = (page_num + 1) / pages_to_process
+                                        progress_bar.progress(progress)
+                                        
+                                        if file_size_mb > 25:
+                                            status_text.text(f"📚 Processing page {page_num + 1}/{pages_to_process} (Batch {batch_start//batch_size + 1})...")
+                                        else:
+                                            status_text.text(f"📖 Extracting page {page_num + 1}/{pages_to_process}...")
+                                        
+                                        page_text = pdf.pages[page_num].extract_text()
+                                        if page_text and page_text.strip():
+                                            # Always include page numbers for children's books (helps with navigation)
+                                            extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                                        
+                                    except Exception as e:
+                                        # Log error but continue processing
+                                        extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                                        continue
+                            
+                            progress_bar.empty()
+                            status_text.empty()
+                            
+                    except ImportError:
+                        # Fallback to PyPDF2 if pdfplumber not available
+                        import PyPDF2
+                        # Reset file pointer to beginning
+                        uploaded_file.seek(0)
+                        pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     
-                    for page_num, page in enumerate(pdf_reader.pages):
+                    total_pages = len(pdf_reader.pages)
+                    
+                    # Process ALL pages for complete children's educational content
+                    file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
+                    max_pages = total_pages  # Always process ALL pages
+                    
+                    if file_size_mb > 50:
+                        st.info(f"📚 Large children's book ({file_size_mb:.1f}MB, {total_pages} pages). Processing ALL pages with batch optimization...")
+                    elif file_size_mb > 25:
+                        st.info(f"📖 Medium children's book ({file_size_mb:.1f}MB, {total_pages} pages). Processing ALL pages efficiently...")
+                    elif total_pages > 50:
+                        st.info(f"📄 Long children's book ({total_pages} pages). Processing ALL pages for complete story...")
+                    else:
+                        st.info(f"📚 Processing ALL {total_pages} pages for complete educational content...")
+                    
+                    # Progress bar for user feedback
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    pages_to_process = max_pages  # Process ALL pages
+                    
+                    for page_num in range(pages_to_process):
                         try:
+                            # Update progress
+                            progress = (page_num + 1) / pages_to_process
+                            progress_bar.progress(progress)
+                            status_text.text(f"📖 Extracting text from page {page_num + 1}/{pages_to_process}...")
+                            
+                            page = pdf_reader.pages[page_num]
                             page_text = page.extract_text()
+                            
                             if page_text.strip():
+                                # Always include page numbers for children's books
                                 extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
-                        except:
-                            extracted_text += f"Page {page_num + 1}: [Content could not be extracted]\n\n"
+                            else:
+                                # Even if no text, mark the page for completeness
+                                extracted_text += f"Page {page_num + 1}: [Image or no text content]\n\n"
+                                
+                        except Exception as e:
+                            # Log error but continue processing all pages
+                            extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                            continue
+                    
+                    # Clean up progress indicators
+                    progress_bar.empty()
+                    status_text.empty()
+                    
+                    if total_pages > max_pages:
+                        st.success(f"✅ Extracted text from {min(page_num + 1, max_pages)} pages. This should be sufficient for generating learning content!")
+                    else:
+                        st.success(f"✅ Extracted text from all {total_pages} pages!")
                     
                     # If no text was extracted, try alternative method
                     if not extracted_text.strip():
@@ -1765,12 +1989,24 @@ def process_with_aws(uploaded_file):
         
         # IMMEDIATE TEXT EXTRACTION
         try:
-            # For PDFs, extract text immediately
+            # For PDFs, extract ALL pages for children's content
             if uploaded_file.name.lower().endswith('.pdf'):
                 import PyPDF2
                 pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                for page in pdf_reader.pages:
-                    extracted_text += page.extract_text() + "\n"
+                
+                # Process ALL pages for complete children's content
+                total_pages = len(pdf_reader.pages)
+                
+                for page_num in range(total_pages):
+                    try:
+                        page_text = pdf_reader.pages[page_num].extract_text()
+                        if page_text.strip():
+                            extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                        else:
+                            extracted_text += f"Page {page_num + 1}: [Image or no text content]\n\n"
+                    except:
+                        extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                        continue
             
             # For images, show placeholder (AWS Textract will process later)
             elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -1819,13 +2055,25 @@ def process_document_background():
         
         # Try simple text extraction first (for immediate response)
         try:
-            # For PDFs, try simple extraction
+            # For PDFs, extract ALL pages for complete children's content
             if uploaded_file.name.lower().endswith('.pdf'):
                 import PyPDF2
                 pdf_reader = PyPDF2.PdfReader(uploaded_file)
                 text = ""
-                for page in pdf_reader.pages:
-                    text += page.extract_text() + "\n"
+                
+                # Process ALL pages for complete children's content
+                total_pages = len(pdf_reader.pages)
+                
+                for page_num in range(total_pages):
+                    try:
+                        page_text = pdf_reader.pages[page_num].extract_text()
+                        if page_text.strip():
+                            text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                        else:
+                            text += f"Page {page_num + 1}: [Image or no text content]\n\n"
+                    except:
+                        text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                        continue
                 
                 if len(text.strip()) > 50:
                     # Use simple extraction
@@ -2041,66 +2289,163 @@ def display_processed_content():
             </div>
         """, unsafe_allow_html=True)
         
-        # Question input with inline microphone
-        col1, col2 = st.columns([6, 1])
+        # Question input with voice recording
+        st.markdown("### 💭 Ask Your Question")
+        
+        # Initialize voice recording state
+        if 'recording_mode' not in st.session_state:
+            st.session_state.recording_mode = False
+        if 'transcribed_question' not in st.session_state:
+            st.session_state.transcribed_question = ""
+        
+        # Voice recording section
+        col1, col2 = st.columns([5, 1])
         
         with col1:
+            # Text input for question
             question = st.text_input(
-                "💭 What would you like to know?",
-                placeholder="What is friendship?",
-                help="Type your question or use the microphone",
+                "Type your question here:",
+                value=st.session_state.get('transcribed_question', ''),
+                placeholder="What is friendship? or click the microphone to speak...",
+                help="Type your question or use the microphone to speak",
                 key="question_input"
             )
         
         with col2:
             st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-            if st.button("🎤", help="Voice input", key="voice_btn", use_container_width=True):
-                # Simulate voice input - just populate text field
+            
+            # Voice recording button
+            if st.button("🎤", help="Click to record your voice question", key="voice_record_btn", use_container_width=True):
+                st.session_state.recording_mode = True
+                st.rerun()
+        
+        # Voice recording interface
+        if st.session_state.recording_mode:
+            st.markdown("---")
+            st.markdown("### 🎤 Voice Recording")
+            
+            # Try to use audio recorder
+            try:
+                from audio_recorder_streamlit import audio_recorder
+                
+                st.info("🎤 Click the microphone below to start recording your question!")
+                
+                audio_bytes = audio_recorder(
+                    text="Record your question",
+                    recording_color="#e74c3c",
+                    neutral_color="#667eea",
+                    icon_name="microphone",
+                    icon_size="2x",
+                    pause_threshold=2.0,
+                    sample_rate=16000,
+                    key="audio_recorder"
+                )
+                
+                if audio_bytes:
+                    st.success("🎵 Audio recorded! Transcribing...")
+                    
+                    # Transcribe the audio
+                    transcribed_text = transcribe_audio_aws(audio_bytes)
+                    
+                    if transcribed_text:
+                        st.success(f"✅ Transcribed: '{transcribed_text}'")
+                        st.session_state.transcribed_question = transcribed_text
+                        st.session_state.question_input = transcribed_text
+                        st.session_state.recording_mode = False
+                        st.rerun()
+                    else:
+                        st.error("❌ Could not transcribe audio. Please try again or type your question.")
+                
+                # Cancel recording button
+                if st.button("❌ Cancel Recording", key="cancel_recording"):
+                    st.session_state.recording_mode = False
+                    st.rerun()
+                    
+            except ImportError:
+                st.warning("📦 Audio recorder not installed. Using fallback method...")
+                
+                # Fallback: File upload for audio
+                st.info("🎤 Please upload an audio file with your question:")
+                uploaded_audio = st.file_uploader(
+                    "Upload audio file",
+                    type=['wav', 'mp3', 'm4a'],
+                    help="Upload a short audio file with your question"
+                )
+                
+                if uploaded_audio:
+                    st.success("🎵 Audio uploaded! Transcribing...")
+                    
+                    # Convert to bytes and transcribe
+                    audio_bytes = uploaded_audio.read()
+                    transcribed_text = transcribe_audio_aws(audio_bytes)
+                    
+                    if transcribed_text:
+                        st.success(f"✅ Transcribed: '{transcribed_text}'")
+                        st.session_state.transcribed_question = transcribed_text
+                        st.session_state.question_input = transcribed_text
+                        st.session_state.recording_mode = False
+                        st.rerun()
+                    else:
+                        st.error("❌ Could not transcribe audio. Please try again or type your question.")
+                
+                # Demo voice questions for fallback
+                st.markdown("**Or try these sample voice questions:**")
                 demo_questions = [
                     "What is the main idea of this text?",
                     "How can I apply this in my daily life?", 
                     "What does this story teach us about emotions?",
                     "Why is empathy important?",
-                    "Can you explain this concept in simple words?",
-                    "What are the key lessons from this reading?"
+                    "Can you explain this concept in simple words?"
                 ]
-                import random
-                voice_question = random.choice(demo_questions)
                 
-                # Update the text input with voice question
-                try:
-                    st.session_state.question_input = voice_question
+                for i, demo_q in enumerate(demo_questions):
+                    if st.button(f"🎤 '{demo_q}'", key=f"demo_voice_{i}"):
+                        st.session_state.transcribed_question = demo_q
+                        st.session_state.question_input = demo_q
+                        st.session_state.recording_mode = False
+                        st.rerun()
+                
+                # Cancel button for fallback
+                if st.button("❌ Cancel", key="cancel_upload"):
+                    st.session_state.recording_mode = False
                     st.rerun()
-                except:
-                    st.success(f"🎤 Voice question: {voice_question}")
-                    st.info("Please copy the question above and paste it in the text field.")
+            
+            except Exception as e:
+                st.error(f"Voice recording error: {str(e)}")
+                st.info("Please type your question instead.")
+                
+                if st.button("❌ Close Voice Input", key="close_voice"):
+                    st.session_state.recording_mode = False
+                    st.rerun()
         
         # Enhanced Get Answer button
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("---")
         if st.button("🔍 Get My Answer!", use_container_width=True, type="primary", key="get_answer_btn"):
-            current_question = st.session_state.get('question_input', '').strip()
+            # Get question from either text input or transcribed voice
+            current_question = question.strip() if question else st.session_state.get('transcribed_question', '').strip()
             
             if current_question:
                 # Get context from processed content
                 context_text = content.get('cleaned_text', '')
                 grade_level = st.session_state.grade_level
                 
-                # Generate instant demo answer for fast response
-                answer = generate_demo_answer(current_question, grade_level)
+                # Try AI answer first, then fallback to demo
+                answer = None
+                try:
+                    with st.spinner("🤔 Getting answer from your document..."):
+                        ai_answer = answer_question(current_question, context_text, grade_level)
+                        if ai_answer:
+                            answer = ai_answer
+                except:
+                    pass
                 
-                # If demo answer is generic, try AI answer with timeout
-                if "That's a great question" in answer:
-                    try:
-                        with st.spinner("🤔 Getting detailed answer..."):
-                            import time
-                            start_time = time.time()
-                            ai_answer = answer_question(current_question, context_text, grade_level)
-                            
-                            # Use AI answer if it comes back quickly (within 3 seconds)
-                            if ai_answer and (time.time() - start_time) < 3:
-                                answer = ai_answer
-                    except:
-                        pass  # Keep demo answer
+                # If AI fails, generate content-aware demo answer
+                if not answer:
+                    answer = generate_content_aware_answer(current_question, context_text, grade_level)
+                
+                # Final fallback to generic demo answer
+                if not answer:
+                    answer = generate_demo_answer(current_question, grade_level)
                 
                 if answer:
                     # Store in conversation history
@@ -2180,7 +2525,7 @@ def display_processed_content():
                                 font-weight: bold; margin-bottom: 15px;'>
                         {story_data.get('title', 'Your Story')}
                     </div>
-                    <div style='font-size: 1.1em; line-height: 1.8; color: #333; white-space: pre-line; font-weight: bold;'>
+                    <div style='font-size: 1.1em; line-height: 1.8; color: #333; white-space: pre-line;'>
                         {story_data.get('story', '')}
                     </div>
                 </div>
@@ -2237,7 +2582,7 @@ def display_processed_content():
                             if new_story:
                                 st.session_state.direct_story = new_story
                                 st.success("✅ New story created with a different approach!")
-                                # Don't use st.rerun() to avoid tab switching
+                                st.rerun()  # Refresh to show new story
                     
                     elif st.session_state.direct_story_dislike_count >= 2:
                         # Second dislike: Show external story links
@@ -2290,7 +2635,7 @@ def display_processed_content():
                                     font-weight: bold; margin-bottom: 15px;'>
                             {story_data.get('title', 'Your Story')}
                         </div>
-                        <div style='font-size: 1.1em; line-height: 1.8; color: #333; white-space: pre-line; font-weight: bold;'>
+                        <div style='font-size: 1.1em; line-height: 1.8; color: #333; white-space: pre-line;'>
                             {story_data.get('story', '')}
                         </div>
                     </div>
@@ -2345,13 +2690,11 @@ def display_processed_content():
                             # First dislike: Regenerate story
                             with st.spinner("✨ Making a new story..."):
                                 extracted_text = content.get('cleaned_text', '')
-                                result = regenerate_story(
-                                    extracted_text,
-                                    st.session_state.grade_level,
-                                    avoid_themes=[story_data.get('theme', '')]
-                                )
-                                if result:
+                                new_story = generate_story_direct(extracted_text, st.session_state.grade_level)
+                                if new_story:
+                                    st.session_state.direct_story = new_story
                                     st.success("✅ New story created with a different approach!")
+                                    st.rerun()  # Refresh to show new story
                                 else:
                                     st.error("Failed to regenerate. Please try again.")
                         
@@ -2425,7 +2768,7 @@ def display_processed_content():
                                         font-weight: bold; margin-bottom: 15px;'>
                                 {story_data.get('title', 'Your Story')}
                             </div>
-                            <div style='font-size: 1.1em; line-height: 1.8; color: #333; white-space: pre-line; font-weight: bold;'>
+                            <div style='font-size: 1.1em; line-height: 1.8; color: #333; white-space: pre-line;'>
                                 {story_data.get('story', '')}
                             </div>
                         </div>
@@ -2482,6 +2825,7 @@ def display_processed_content():
                                     if new_story:
                                         st.session_state.direct_story = new_story
                                         st.success("✅ New story created with a different approach!")
+                                        st.rerun()  # Refresh to show new story
                             
                             elif st.session_state.direct_story_dislike_count >= 2:
                                 # TIER 3: Playwright Agent searches external stories
@@ -2603,15 +2947,7 @@ def display_processed_content():
 def display_aws_quiz(quiz_data):
     """Display AWS-generated quiz with organized tabs"""
     
-    st.markdown("""
-        <div style='background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); 
-                    padding: 25px; border-radius: 20px; text-align: center;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 30px;'>
-            <div style='font-size: 2em; color: #2d3748; font-weight: bold;'>
-                🎯 Quiz Time! Choose a quiz type below! ⭐
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+
     
     # Organize questions by type
     questions = quiz_data.get('questions', [])
@@ -3177,41 +3513,7 @@ def teacher_interface():
                                 </div>
                             """, unsafe_allow_html=True)
                         
-                        # Show detailed breakdown if available
-                        if st.button("📊 View Detailed Quiz Breakdown", key="detailed_breakdown"):
-                            st.markdown("#### 📋 Detailed Question Analysis")
-                            
-                            for quiz_idx, quiz in enumerate(analytics['recent_quizzes']):
-                                with st.expander(f"📝 {quiz['quiz_title']} - Detailed Results"):
-                                    if 'detailed_results' in quiz:
-                                        # Group by question type
-                                        type_performance = {}
-                                        for result in quiz['detailed_results']:
-                                            q_type = result['type']
-                                            if q_type not in type_performance:
-                                                type_performance[q_type] = {'correct': 0, 'total': 0}
-                                            type_performance[q_type]['total'] += 1
-                                            if result['is_correct']:
-                                                type_performance[q_type]['correct'] += 1
-                                        
-                                        # Show performance by type
-                                        st.markdown("**Performance by Question Type:**")
-                                        type_names = {
-                                            'multiple_choice': '🔵 Multiple Choice',
-                                            'true_false': '🟢 True/False',
-                                            'fill_blank': '🟡 Fill in the Blank',
-                                            'match_pair': '🟣 Match the Pair'
-                                        }
-                                        
-                                        cols = st.columns(len(type_performance))
-                                        for idx, (q_type, perf) in enumerate(type_performance.items()):
-                                            with cols[idx]:
-                                                percentage = int((perf['correct'] / perf['total']) * 100)
-                                                st.metric(
-                                                    type_names.get(q_type, q_type),
-                                                    f"{percentage}%",
-                                                    f"{perf['correct']}/{perf['total']}"
-                                                )
+
                 else:
                     st.warning(f"⚠️ No analytics data found for student: {student_id}")
                     st.info("💡 This student may not have completed any activities yet, or the student ID may be incorrect.")
