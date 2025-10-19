@@ -1,17 +1,18 @@
 """
-EmoVerse AI - Architecture Diagram Generator
-Creates a visual architecture diagram for AWS AI Agent Global Hackathon
+EmoVerse AI - Complete System Flow Architecture Diagram Generator
+Creates comprehensive visual architecture diagram for AWS AI Agent Global Hackathon
+Shows exact step-by-step flow with all AWS services and AgentCore integration
 """
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.patches import FancyBboxPatch, ConnectionPatch
+from matplotlib.patches import FancyBboxPatch, ConnectionPatch, Rectangle
 import numpy as np
 
-def create_architecture_diagram():
-    fig, ax = plt.subplots(1, 1, figsize=(16, 12))
-    ax.set_xlim(0, 16)
-    ax.set_ylim(0, 12)
+def create_complete_flow_diagram():
+    fig, ax = plt.subplots(1, 1, figsize=(20, 16))
+    ax.set_xlim(0, 20)
+    ax.set_ylim(0, 16)
     ax.axis('off')
     
     # Color scheme
@@ -178,6 +179,10 @@ def create_architecture_diagram():
     
     return fig
 
+def create_architecture_diagram():
+    """Legacy function for backward compatibility"""
+    return create_complete_flow_diagram()
+
 if __name__ == "__main__":
-    create_architecture_diagram()
+    create_complete_flow_diagram()
     plt.show()
