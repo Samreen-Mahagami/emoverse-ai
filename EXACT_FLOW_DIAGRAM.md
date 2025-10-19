@@ -73,12 +73,11 @@ flowchart TD
     EMOTION_CHECK -->|No| LOADING_SENTIMENT[Show loading message]
     
     %% Tab 3 - Q&A
-    TAB3 --> QA_INTERFACE[Question Input + 🎤 Voice Button]
+    TAB3 --> QA_INTERFACE[Text Question Input]
     QA_INTERFACE --> QUESTION_ENTERED{Question Entered?}
     QUESTION_ENTERED -->|Yes| ANSWER_GEN[generate_demo_answer() or answer_question()]
     ANSWER_GEN --> SHOW_ANSWER[Display AI answer with styling]
-    QUESTION_ENTERED -->|Voice| VOICE_PROCESS[process_voice_question() - AWS Transcribe]
-    VOICE_PROCESS --> ANSWER_GEN
+
     
     %% Tab 4 - Stories (Multi-Tier System)
     TAB4 --> STORY_CHECK{Story Ready?}
@@ -150,7 +149,7 @@ flowchart TD
         TEXTRACT_SVC[AWS Textract<br/>Document OCR]
         BEDROCK_SVC[AWS Bedrock<br/>Claude Sonnet 4.5]
         COMPREHEND_SVC[AWS Comprehend<br/>Sentiment Analysis]
-        TRANSCRIBE_SVC[AWS Transcribe<br/>Voice to Text]
+        TEXT_PROC_SVC[Text Processing<br/>Q&A System]
         DYNAMO[(DynamoDB<br/>Analytics Storage)]
     end
     
@@ -160,7 +159,7 @@ flowchart TD
     STORY_GEN --> BEDROCK_SVC
     QUIZ_GEN --> BEDROCK_SVC
     SENTIMENT --> COMPREHEND_SVC
-    VOICE_PROCESS --> TRANSCRIBE_SVC
+    ANSWER_GEN --> TEXT_PROC_SVC
     STORE_RESULTS --> DYNAMO
     LOAD_ANALYTICS --> DYNAMO
     
@@ -221,7 +220,7 @@ Tier 3: search_external_stories() via Playwright Agent
 ```
 📖 Text Display → Show extracted content with grade-appropriate messaging
 😊 Emotions → Sentiment analysis with visual indicators
-❓ Q&A → AI-powered question answering + voice input
+❓ Q&A → AI-powered question answering with text input
 📚 Stories → Multi-tier story generation with feedback system
 🎯 Quizzes → 4 question types with detailed scoring
 ```
@@ -238,7 +237,7 @@ get_student_analytics() → Query DynamoDB + Session Data → Display Dashboard
 - **Error Handling**: Multiple fallback mechanisms for AI service failures  
 - **Grade Adaptation**: Content automatically adjusts for K-10 levels
 - **Real-time Processing**: Immediate text extraction with background AI generation
-- **Multi-modal Input**: PDF (PyPDF2), Images (Textract), Voice (Transcribe)
+- **Multi-modal Input**: PDF (PyPDF2), Images (Textract), Text (Direct Input)
 - **Scalable Architecture**: Stateless design with session-based data management
 
 ### 🎯 AWS Services Integration Points
@@ -249,7 +248,7 @@ get_student_analytics() → Query DynamoDB + Session Data → Display Dashboard
 | **Textract** | OCR Processing | `extract_text_from_s3()` |
 | **Bedrock** | AI Generation | `generate_story_direct()`, `generate_quiz_direct()` |
 | **Comprehend** | Sentiment Analysis | `analyze_sentiment()` |
-| **Transcribe** | Voice Processing | `process_voice_question()` |
+| **Text Processing** | Q&A System | `answer_question()` |
 | **DynamoDB** | Analytics Storage | `get_student_analytics()` |
 
 This flow diagram represents the exact implementation as coded in your `app_demo.py` file, showing all the actual function calls, session state management, and AWS service integrations.

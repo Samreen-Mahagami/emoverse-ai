@@ -237,27 +237,27 @@ STEP 13: AWS BEDROCK QUIZ GENERATION
 └─────────────────────────────────────────────────────────────────────────────────────────┘
                                                       │
                                                       ▼
-STEP 14: VOICE INPUT PROCESSING (Optional User Action)
+STEP 14: TEXT Q&A INPUT PROCESSING (User Action)
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                          🎤 Voice Question Processing Pipeline                          │
+│                          📝 Text Question Processing Pipeline                           │
 │                                                                                         │
 │  Tab 3: "❓ Ask Questions" Interface                                                  │
 │  • Text input field for typed questions                                              │
-│  • 🎤 Voice recording button                                                         │
+│  • Clean, simple question input interface                                            │
 │                                                                                         │
-│  Voice Processing Flow:                                                                │
-│  ├─ streamlit-audio-recorder component                                               │
-│  ├─ Browser-based audio recording (WAV format)                                       │
-│  ├─ Upload audio to S3 temporary storage                                             │
-│  └─ AWS Transcribe speech-to-text conversion                                         │
+│  Text Processing Flow:                                                                 │
+│  ├─ Direct text input from user                                                      │
+│  ├─ Question validation and processing                                               │
+│  ├─ Context analysis from uploaded document                                          │
+│  └─ AI-powered answer generation                                                     │
 │                                                                                         │
-│  Function: transcribe_audio_aws(audio_bytes)                                          │
-│  • Create unique transcription job                                                   │
-│  • start_transcription_job() with S3 audio file                                     │
-│  • Poll for completion with progress indicators                                      │
-│  • Extract transcribed text and populate input field                                │
+│  Function: answer_question(question, context_text, grade_level)                       │
+│  • Process user's typed question                                                     │
+│  • Analyze document context for relevant information                                 │
+│  • Generate grade-appropriate responses                                              │
+│  • Provide contextual answers based on uploaded content                             │
 │                                                                                         │
-│  Fallback: Demo voice questions for testing                                          │
+│  Enhanced Features: Content-aware responses and conversation history                  │
 └─────────────────────────────────────────────────────────────────────────────────────────┘
                                                       │
                                                       ▼
@@ -423,7 +423,7 @@ STEP 20: MONITORING & OBSERVABILITY
 │  ├─ 📄 Textract: OCR processing for images and complex PDFs                          │
 │  ├─ 🧠 Bedrock: AI content generation (Claude Sonnet 4.5)                           │
 │  ├─ 💭 Comprehend: Sentiment analysis and emotional tone detection                   │
-│  ├─ 🎤 Transcribe: Voice-to-text conversion for questions                            │
+│  ├─ 📝 Text Processing: Direct text input for questions                             │
 │  ├─ 🗄️ DynamoDB: Analytics storage and long-term memory                             │
 │  ├─ 🚪 API Gateway: RESTful API endpoints                                            │
 │  └─ ⚡ Lambda: Serverless orchestration functions                                     │
@@ -459,7 +459,7 @@ S3: upload_to_s3() → extract_text_from_s3()
 Textract: start_document_text_detection() → get_document_text_detection()
 Bedrock: invoke_model() with Claude Sonnet 4.5
 Comprehend: detect_sentiment() with confidence scores
-Transcribe: start_transcription_job() → get_transcription_job()
+Text Processing: Direct question analysis and contextual response generation
 DynamoDB: Query/Put operations for analytics storage
 ```
 

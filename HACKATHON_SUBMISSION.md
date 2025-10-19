@@ -90,7 +90,7 @@ Our platform implements a **sophisticated multi-agent architecture** with intell
 - ✅ **AWS Bedrock** - Claude Sonnet 4.5 for content generation
 - ✅ **AWS Textract** - OCR for PDF text extraction
 - ✅ **AWS Comprehend** - Sentiment analysis and emotion detection
-- ✅ **AWS Transcribe** - Voice-to-text for Q&A
+- ✅ **Text Processing** - Direct text input for Q&A
 
 ### Compute & Orchestration
 - ✅ **AWS Lambda** - 10 serverless functions
@@ -155,7 +155,7 @@ Tier 3: Playwright Agent searches web for alternatives
 **Solution:** Intelligent routing
 ```
 PDF → Textract → Text
-Voice → Transcribe → Text
+Text → Direct Input → Processing
 Text → Comprehend → Sentiment
 All → Bedrock → Content
 ```
@@ -452,7 +452,7 @@ Total: $55-60/month
 ### Technical Implementation ⭐⭐⭐⭐⭐
 - 10 Lambda functions
 - 6 AI agents
-- 4 AWS AI services (Bedrock, Textract, Comprehend, Transcribe)
+- 3 AWS AI services (Bedrock, Textract, Comprehend)
 - Production-ready infrastructure
 
 ### AWS Service Usage ⭐⭐⭐⭐⭐
@@ -462,7 +462,7 @@ Total: $55-60/month
 - S3 - Storage
 - Textract - OCR
 - Comprehend - NLP
-- Transcribe - Voice
+- Text Processing - Q&A
 - API Gateway - REST API
 - CloudWatch - Monitoring
 - SAM/CloudFormation - IaC
