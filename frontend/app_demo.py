@@ -2009,22 +2009,43 @@ def main():
     
     # Enhanced main title - more visible and attractive
     st.markdown("""
-        <div style='text-align: center; margin: 40px 0 60px 0; padding: 30px;
-                    background: rgba(255, 255, 255, 0.1); 
-                    border-radius: 25px; 
-                    backdrop-filter: blur(10px);
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
-            <h1 style='font-size: 4.5em; font-weight: 900; margin: 0 0 20px 0;
+        <div style='text-align: center; margin: 40px 0 60px 0; padding: 40px;
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%); 
+                    border-radius: 30px; 
+                    backdrop-filter: blur(15px);
+                    box-shadow: 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+                    border: 1px solid rgba(255,255,255,0.2);
+                    animation: titleFloat 3s ease-in-out infinite;'>
+            <h1 style='font-size: 5.2em; font-weight: 900; margin: 0 0 25px 0;
                        color: #ffffff;
-                       text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
-                       letter-spacing: 2px;'>
+                       text-shadow: 3px 3px 12px rgba(0,0,0,0.6), 0 0 30px rgba(255,255,255,0.3);
+                       letter-spacing: 3px;
+                       animation: titleGlow 2s ease-in-out infinite alternate;'>
                 🌈 Welcome to EmoVerse AI 🚀
             </h1>
-            <p style='color: #ffffff; font-size: 1.6em; margin: 0; font-weight: 500;
-                      text-shadow: 1px 1px 4px rgba(0,0,0,0.4);'>
+            <p style='color: #ffffff; font-size: 1.8em; margin: 0; font-weight: 600;
+                      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+                      animation: subtitlePulse 2.5s ease-in-out infinite;'>
                 Personalized Social-Emotional Learning with AI ✨
             </p>
         </div>
+        
+        <style>
+        @keyframes titleFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        @keyframes titleGlow {
+            0% { text-shadow: 3px 3px 12px rgba(0,0,0,0.6), 0 0 30px rgba(255,255,255,0.3); }
+            100% { text-shadow: 3px 3px 12px rgba(0,0,0,0.6), 0 0 40px rgba(255,255,255,0.5), 0 0 60px rgba(240,147,251,0.4); }
+        }
+        
+        @keyframes subtitlePulse {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 1; }
+        }
+        </style>
     """, unsafe_allow_html=True)
     
 
@@ -2034,17 +2055,65 @@ def main():
         # Enhanced "Who Are You?" section
         st.markdown("""
             <div style='text-align: center; margin: 30px 0 50px 0;'>
-                <div style='background: rgba(255, 255, 255, 0.15); 
-                            padding: 25px; border-radius: 20px; 
-                            backdrop-filter: blur(10px);
-                            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-                            display: inline-block;'>
-                    <h2 style='color: #ffffff; font-size: 2.5em; margin: 0;
-                               font-weight: 700; text-shadow: 2px 2px 6px rgba(0,0,0,0.4);'>
+                <div style='background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%); 
+                            padding: 30px 40px; border-radius: 25px; 
+                            backdrop-filter: blur(15px);
+                            box-shadow: 0 8px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+                            border: 1px solid rgba(255,255,255,0.15);
+                            display: inline-block;
+                            animation: sectionBounce 2s ease-in-out infinite;'>
+                    <h2 style='color: #ffffff; font-size: 3em; margin: 0;
+                               font-weight: 800; 
+                               text-shadow: 2px 2px 8px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.2);
+                               letter-spacing: 1px;
+                               animation: choiceShimmer 3s ease-in-out infinite;'>
                         ✨ Choose Your Learning Journey
                     </h2>
                 </div>
             </div>
+            
+            <style>
+            @keyframes sectionBounce {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.02); }
+            }
+            
+            @keyframes choiceShimmer {
+                0%, 100% { color: #ffffff; }
+                50% { color: #f093fb; }
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        # Add floating decorative elements
+        st.markdown("""
+            <div style='position: relative; margin: 20px 0;'>
+                <div style='position: absolute; top: -20px; left: 10%; 
+                           font-size: 2em; animation: float1 4s ease-in-out infinite;'>🌟</div>
+                <div style='position: absolute; top: -10px; right: 15%; 
+                           font-size: 1.5em; animation: float2 3s ease-in-out infinite;'>✨</div>
+                <div style='position: absolute; top: 50px; left: 5%; 
+                           font-size: 1.8em; animation: float3 3.5s ease-in-out infinite;'>🎨</div>
+                <div style='position: absolute; top: 40px; right: 8%; 
+                           font-size: 1.6em; animation: float1 2.8s ease-in-out infinite;'>🌈</div>
+            </div>
+            
+            <style>
+            @keyframes float1 {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-15px) rotate(10deg); }
+            }
+            
+            @keyframes float2 {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-20px) rotate(-10deg); }
+            }
+            
+            @keyframes float3 {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-12px) rotate(5deg); }
+            }
+            </style>
         """, unsafe_allow_html=True)
         
         # Better centered button layout
