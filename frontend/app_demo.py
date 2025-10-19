@@ -2308,46 +2308,85 @@ def complete_text_extraction(uploaded_file):
         # PDF EXTRACTION - Multiple methods
         if uploaded_file.name.lower().endswith('.pdf'):
             
-            # Try raw text first (works for your PDF)
+            # Try pdfplumber first (best for readable content)
             try:
+                import pdfplumber
                 uploaded_file.seek(0)
-                raw_content = uploaded_file.read()
-                text_content = raw_content.decode('utf-8', errors='ignore')
-                
-                # Basic cleaning
-                import re
-                text_content = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text_content)
-                text_content = text_content.strip()
-                
-                if len(text_content) > 1000:  # We know your PDF has 620K chars
-                    extracted_text = text_content
+                with pdfplumber.open(uploaded_file) as pdf:
+                    for page in pdf.pages:
+                        page_text = page.extract_text()
+                        if page_text and page_text.strip():
+                            extracted_text += page_text + "\n\n"
+                            
+                # If we got good content, clean it up
+                if len(extracted_text.strip()) > 100:
+                    # Remove excessive whitespace but keep structure
+                    import re
+                    extracted_text = re.sub(r'\n\s*\n\s*\n', '\n\n', extracted_text)
+                    extracted_text = extracted_text.strip()
                     
+            except ImportError:
+                pass
             except:
                 pass
             
-            # Try pdfplumber if raw didn't work
-            if not extracted_text:
-                try:
-                    import pdfplumber
-                    uploaded_file.seek(0)
-                    with pdfplumber.open(uploaded_file) as pdf:
-                        for page in pdf.pages:
-                            page_text = page.extract_text()
-                            if page_text:
-                                extracted_text += page_text + "\n\n"
-                except:
-                    pass
-            
             # Try PyPDF2 if pdfplumber didn't work
-            if not extracted_text:
+            if not extracted_text or len(extracted_text.strip()) < 100:
                 try:
                     import PyPDF2
                     uploaded_file.seek(0)
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                    extracted_text = ""  # Reset
+                    
                     for page in pdf_reader.pages:
                         page_text = page.extract_text()
-                        if page_text:
+                        if page_text and page_text.strip():
                             extracted_text += page_text + "\n\n"
+                            
+                    # Clean up if we got content
+                    if len(extracted_text.strip()) > 100:
+                        import re
+                        extracted_text = re.sub(r'\n\s*\n\s*\n', '\n\n', extracted_text)
+                        extracted_text = extracted_text.strip()
+                        
+                except ImportError:
+                    pass
+                except:
+                    pass
+            
+            # Only try raw text as last resort (and filter out metadata)
+            if not extracted_text or len(extracted_text.strip()) < 100:
+                try:
+                    uploaded_file.seek(0)
+                    raw_content = uploaded_file.read()
+                    text_content = raw_content.decode('utf-8', errors='ignore')
+                    
+                    # Filter out PDF metadata and keep only readable content
+                    import re
+                    # Remove PDF metadata lines
+                    lines = text_content.split('\n')
+                    clean_lines = []
+                    
+                    for line in lines:
+                        line = line.strip()
+                        # Skip PDF metadata and technical lines
+                        if (line and 
+                            not line.startswith('%PDF') and
+                            not line.startswith('%%EOF') and
+                            not line.startswith('/') and
+                            not line.startswith('<<') and
+                            not line.startswith('>>') and
+                            not re.match(r'^\d+\s+\d+\s+obj', line) and
+                            not line.startswith('endobj') and
+                            not line.startswith('stream') and
+                            not line.startswith('endstream') and
+                            len(line) > 10 and
+                            not line.isdigit()):
+                            clean_lines.append(line)
+                    
+                    if clean_lines:
+                        extracted_text = '\n\n'.join(clean_lines)
+                        
                 except:
                     pass
             
