@@ -2320,21 +2320,13 @@ def student_interface():
                 st.rerun()
 
 def extract_text_immediately(uploaded_file):
-    """Show processing message, extract text, then display tabs when ready"""
+    """Show simple processing message, extract text, then display tabs when ready"""
     
-    # STEP 1: Show processing message immediately with file info
+    # STEP 1: Show single, simple processing message
     st.session_state.processing_file = True
     
-    file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Size in MB
-    
-    if file_size > 50:
-        st.info(f"📚 Processing large children's book ({file_size:.1f}MB)... ALL pages will be processed: ~20-30 seconds.")
-    elif file_size > 25:
-        st.info(f"📖 Processing medium children's book ({file_size:.1f}MB)... ALL pages will be processed: ~15-25 seconds.")
-    elif file_size > 10:
-        st.info(f"📄 Processing children's book ({file_size:.1f}MB)... ALL pages will be processed: ~10-15 seconds.")
-    else:
-        st.info("📚 Processing your children's book... ALL pages will be processed for complete content.")
+    # Single, clear processing message
+    st.info("📚 Processing your document, please wait a moment...")
     
     # Force rerun to show processing message
     st.rerun()
@@ -2359,53 +2351,25 @@ def complete_text_extraction(uploaded_file):
                         with pdfplumber.open(uploaded_file) as pdf:
                             total_pages = len(pdf.pages)
                             
-                            # Process ALL pages for children's educational content
+                            # Process ALL pages for children's educational content - OPTIMIZED
                             file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
                             max_pages = total_pages  # Process ALL pages
                             
-                            if file_size_mb > 50:
-                                st.info(f"📚 Large children's book ({file_size_mb:.1f}MB, {total_pages} pages). Processing ALL pages with speed optimization...")
-                            elif file_size_mb > 25:
-                                st.info(f"📖 Medium children's book ({file_size_mb:.1f}MB, {total_pages} pages). Processing ALL pages efficiently...")
-                            elif total_pages > 50:
-                                st.info(f"📄 Long children's book ({total_pages} pages). Processing ALL pages for complete story...")
-                            else:
-                                st.info(f"📚 Processing ALL {total_pages} pages for complete educational content...")
+                            # Fast processing without detailed progress messages
+                            pages_to_process = max_pages
                             
-                            progress_bar = st.progress(0)
-                            status_text = st.empty()
-                            
-                            pages_to_process = max_pages  # Process ALL pages
-                            
-                            # Batch processing for speed optimization
-                            batch_size = 5 if file_size_mb > 25 else 10
-                            
-                            for batch_start in range(0, pages_to_process, batch_size):
-                                batch_end = min(batch_start + batch_size, pages_to_process)
-                                
-                                # Process batch of pages
-                                for page_num in range(batch_start, batch_end):
-                                    try:
-                                        progress = (page_num + 1) / pages_to_process
-                                        progress_bar.progress(progress)
+                            # Optimized batch processing for speed
+                            for page_num in range(pages_to_process):
+                                try:
+                                    page_text = pdf.pages[page_num].extract_text()
+                                    if page_text and page_text.strip():
+                                        # Include page numbers for navigation
+                                        extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
                                         
-                                        if file_size_mb > 25:
-                                            status_text.text(f"📚 Processing page {page_num + 1}/{pages_to_process} (Batch {batch_start//batch_size + 1})...")
-                                        else:
-                                            status_text.text(f"📖 Extracting page {page_num + 1}/{pages_to_process}...")
-                                        
-                                        page_text = pdf.pages[page_num].extract_text()
-                                        if page_text and page_text.strip():
-                                            # Always include page numbers for children's books (helps with navigation)
-                                            extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
-                                        
-                                    except Exception as e:
-                                        # Log error but continue processing
-                                        extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
-                                        continue
-                            
-                            progress_bar.empty()
-                            status_text.empty()
+                                except Exception as e:
+                                    # Log error but continue processing
+                                    extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                                    continue
                             
                     except ImportError:
                         # Fallback to PyPDF2 if pdfplumber not available
@@ -2416,32 +2380,15 @@ def complete_text_extraction(uploaded_file):
                     
                     total_pages = len(pdf_reader.pages)
                     
-                    # Process ALL pages for complete children's educational content
+                    # Process ALL pages for complete children's educational content - FAST
                     file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
                     max_pages = total_pages  # Always process ALL pages
                     
-                    if file_size_mb > 50:
-                        st.info(f"📚 Large children's book ({file_size_mb:.1f}MB, {total_pages} pages). Processing ALL pages with batch optimization...")
-                    elif file_size_mb > 25:
-                        st.info(f"📖 Medium children's book ({file_size_mb:.1f}MB, {total_pages} pages). Processing ALL pages efficiently...")
-                    elif total_pages > 50:
-                        st.info(f"📄 Long children's book ({total_pages} pages). Processing ALL pages for complete story...")
-                    else:
-                        st.info(f"📚 Processing ALL {total_pages} pages for complete educational content...")
-                    
-                    # Progress bar for user feedback
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
                     pages_to_process = max_pages  # Process ALL pages
                     
+                    # Fast processing without progress messages
                     for page_num in range(pages_to_process):
                         try:
-                            # Update progress
-                            progress = (page_num + 1) / pages_to_process
-                            progress_bar.progress(progress)
-                            status_text.text(f"📖 Extracting text from page {page_num + 1}/{pages_to_process}...")
-                            
                             page = pdf_reader.pages[page_num]
                             page_text = page.extract_text()
                             
@@ -2456,15 +2403,6 @@ def complete_text_extraction(uploaded_file):
                             # Log error but continue processing all pages
                             extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
                             continue
-                    
-                    # Clean up progress indicators
-                    progress_bar.empty()
-                    status_text.empty()
-                    
-                    if total_pages > max_pages:
-                        st.success(f"✅ Extracted text from {min(page_num + 1, max_pages)} pages. This should be sufficient for generating learning content!")
-                    else:
-                        st.success(f"✅ Extracted text from all {total_pages} pages!")
                     
                     # If no text was extracted, try alternative method
                     if not extracted_text.strip():
@@ -2531,6 +2469,9 @@ def complete_text_extraction(uploaded_file):
         
         st.session_state.extracted_text = extracted_text
         st.session_state.processing_file = False  # Processing complete
+        
+        # Simple completion message
+        st.success("✅ Document processed successfully!")
         
         # Processing complete - tabs will show automatically
         
