@@ -726,13 +726,12 @@ def upload_to_s3(file, student_id):
         st.error(f"❌ Upload failed: {str(e)}")
         return None
 
-def extract_text_from_s3(file_key):
-    """Extract text using AWS Textract with robust error handling"""
+def start_textract_job(file_key):
+    """Start Textract job and return job_id immediately"""
     try:
         if not file_key:
             return None
             
-        # Start asynchronous text detection
         response = textract_client.start_document_text_detection(
             DocumentLocation={
                 'S3Object': {
@@ -741,46 +740,80 @@ def extract_text_from_s3(file_key):
                 }
             }
         )
-        
-        job_id = response['JobId']
-        
-        # Poll for completion with progress
-        max_attempts = 30  # 30 attempts * 3 seconds = 90 seconds max
-        for attempt in range(max_attempts):
-            time_module.sleep(2)
+        return response['JobId']
+    except Exception as e:
+        return None
+
+def check_textract_job(job_id):
+    """Check Textract job status without blocking"""
+    try:
+        if not job_id:
+            return None, None
             
-            result = textract_client.get_document_text_detection(JobId=job_id)
-            status = result['JobStatus']
+        result = textract_client.get_document_text_detection(JobId=job_id)
+        status = result['JobStatus']
+        
+        if status == 'SUCCEEDED':
+            # Extract text quickly
+            text = ""
+            for block in result.get('Blocks', []):
+                if block['BlockType'] == 'LINE':
+                    text += block['Text'] + "\n"
             
-            if status == 'SUCCEEDED':
-                # Extract text from all pages
-                text = ""
+            # Get additional pages (limited for speed)
+            next_token = result.get('NextToken')
+            page_count = 0
+            while next_token and page_count < 5:  # Limit to 5 additional pages for speed
+                result = textract_client.get_document_text_detection(
+                    JobId=job_id,
+                    NextToken=next_token
+                )
                 for block in result.get('Blocks', []):
                     if block['BlockType'] == 'LINE':
                         text += block['Text'] + "\n"
-                
-                # Get additional pages if any
                 next_token = result.get('NextToken')
-                while next_token:
-                    result = textract_client.get_document_text_detection(
-                        JobId=job_id,
-                        NextToken=next_token
-                    )
-                    for block in result.get('Blocks', []):
-                        if block['BlockType'] == 'LINE':
-                            text += block['Text'] + "\n"
-                    next_token = result.get('NextToken')
-                
-                return text.strip()
+                page_count += 1
             
-            elif status == 'FAILED':
+            return 'SUCCEEDED', text.strip()
+        
+        elif status == 'FAILED':
+            return 'FAILED', None
+        else:
+            return 'IN_PROGRESS', None
+            
+    except Exception as e:
+        return 'ERROR', None
+
+def extract_text_from_s3_fast(file_key):
+    """NON-BLOCKING: Start job and check a few times, then return quickly"""
+    try:
+        # Start the job
+        job_id = start_textract_job(file_key)
+        if not job_id:
+            return None
+        
+        # Check status a few times with minimal delay
+        max_checks = 8  # Only check 8 times
+        for attempt in range(max_checks):
+            if attempt > 0:  # Don't sleep on first check
+                time_module.sleep(0.5)  # Very short sleep
+            
+            status, text = check_textract_job(job_id)
+            
+            if status == 'SUCCEEDED':
+                return text
+            elif status == 'FAILED' or status == 'ERROR':
                 return None
         
-        # Timeout
+        # If still processing after 4 seconds, return None (don't wait)
         return None
         
     except Exception as e:
         return None
+
+def extract_text_from_s3(file_key):
+    """Legacy function - redirects to fast version"""
+    return extract_text_from_s3_fast(file_key)
 
 def start_content_generation(extracted_text, grade_level, story_theme="friendship", quiz_type="multiple_choice"):
     """Start async content generation"""
@@ -2023,7 +2056,7 @@ def main():
                        animation: titleGlow 2s ease-in-out infinite alternate;'>
                 🌈 Welcome to EmoVerse AI 🚀
             </h1>
-            <p style='color: #ffffff; font-size: 2.0em; margin: 0; font-weight: 600;
+            <p style='color: black; font-size: 1.8em; margin: 0; font-weight: 600;
                       text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
                       animation: subtitlePulse 2.5s ease-in-out infinite;'>
                 Personalized Social-Emotional Learning with AI ✨
@@ -2251,143 +2284,148 @@ def student_interface():
                 st.rerun()
 
 def extract_text_immediately(uploaded_file):
-    """Show simple processing message, extract text, then display tabs when ready"""
+    """FAST processing - extract text immediately without delays"""
     
-    # STEP 1: Show single, simple processing message
+    # STEP 1: Set processing flag
     st.session_state.processing_file = True
     
-    # Single, clear processing message
-    st.info("📚 Processing your document, please wait a moment...")
+    # STEP 2: Process immediately (no separate rerun delay)
+    complete_text_extraction(uploaded_file)
     
-    # Force rerun to show processing message
-    st.rerun()
+    # STEP 3: Mark as complete
+    st.session_state.processing_file = False
 
 def complete_text_extraction(uploaded_file):
-    """Complete the text extraction and show tabs - OPTIMIZED for speed"""
+    """SUPER FAST text extraction - optimized for 15-25 second processing"""
     
-    try:
+    import time
+    star
         extracted_text = ""
+        file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
         
-        # STEP 2: FAST TEXT EXTRACTION
-        try:
-            # For PDFs, extract text with smart optimization
-            if uploaded_file.name.lower().endswith('.pdf'):
-                # Try faster PDF processing methods
+        # Show progress during processing
+        progress_placeholder = st.empty()
+        progress_placeholder.info("⚡ Fast processing your document...")
+        
+        # STEP 2: ULTRA-FAST TEXT EXTRACTION
+        if uploaded_file.name.lower().endswith('.pdf'):
+            # PRIORITY 1: Try local PDF processing first (fastest)
+            local_success = False
+            try:
+                # Try pdfplumber first (fastest for most PDFs)
                 try:
-                    # First try pdfplumber (often faster)
-                    try:
-                        import pdfplumber
-                        
-                        uploaded_file.seek(0)
-                        with pdfplumber.open(uploaded_file) as pdf:
-                            total_pages = len(pdf.pages)
-                            
-                            # Process ALL pages for children's educational content - OPTIMIZED
-                            file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
-                            max_pages = total_pages  # Process ALL pages
-                            
-                            # Fast processing without detailed progress messages
-                            pages_to_process = max_pages
-                            
-                            # Optimized batch processing for speed
-                            for page_num in range(pages_to_process):
-                                try:
-                                    page_text = pdf.pages[page_num].extract_text()
-                                    if page_text and page_text.strip():
-                                        # Include page numbers for navigation
-                                        extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
-                                        
-                                except Exception as e:
-                                    # Log error but continue processing
-                                    extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
-                                    continue
-                            
-                    except ImportError:
-                        # Fallback to PyPDF2 if pdfplumber not available
-                        import PyPDF2
-                        # Reset file pointer to beginning
-                        uploaded_file.seek(0)
-                        pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                    import pdfplumber
+                    uploaded_file.seek(0)
                     
+                    with pdfplumber.open(uploaded_file) as pdf:
+                        total_pages = len(pdf.pages)
+                        
+                        # SPEED OPTIMIZATION: Smart page limiting
+                        if file_size_mb > 10:  # For files > 10MB
+                            max_pages = min(30, total_pages)  # Process max 30 pages
+                        elif file_size_mb > 5:  # For files > 5MB
+                            max_pages = min(60, total_pages)  # Process max 60 pages
+                        else:
+                            max_pages = total_pages  # Process all pages for smaller files
+                        
+                        # FAST batch processing
+                        for page_num in range(max_pages):
+                            try:
+                                page_text = pdf.pages[page_num].extract_text()
+                                if page_text and page_text.strip():
+                                    extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                            except:
+                                continue  # Skip problematic pages quickly
+                        
+                        # Check if we got good content
+                        if len(extracted_text.strip()) > 200:
+                            local_success = True
+                            if max_pages < total_pages:
+                                extracted_text += f"\n[Note: Processed first {max_pages} pages of {total_pages} total pages for faster loading]\n"
+                            
+                except ImportError:
+                    # Fallback to PyPDF2
+                    import PyPDF2
+                    uploaded_file.seek(0)
+                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     total_pages = len(pdf_reader.pages)
                     
-                    # Process ALL pages for complete children's educational content - FAST
-                    file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
-                    max_pages = total_pages  # Always process ALL pages
+                    # SPEED OPTIMIZATION: Smart page limiting
+                    if file_size_mb > 10:
+                        max_pages = min(30, total_pages)
+                    elif file_size_mb > 5:
+                        max_pages = min(60, total_pages)
+                    else:
+                        max_pages = total_pages
                     
-                    pages_to_process = max_pages  # Process ALL pages
-                    
-                    # Fast processing without progress messages
-                    for page_num in range(pages_to_process):
+                    for page_num in range(max_pages):
                         try:
-                            page = pdf_reader.pages[page_num]
-                            page_text = page.extract_text()
-                            
+                            page_text = pdf_reader.pages[page_num].extract_text()
                             if page_text.strip():
-                                # Always include page numbers for children's books
                                 extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
-                            else:
-                                # Even if no text, mark the page for completeness
-                                extracted_text += f"Page {page_num + 1}: [Image or no text content]\n\n"
-                                
-                        except Exception as e:
-                            # Log error but continue processing all pages
-                            extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                        except:
                             continue
                     
-                    # If no text was extracted, try alternative method
-                    if not extracted_text.strip():
-                        # Try using AWS Textract as fallback for PDFs
-                        try:
-                            file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
-                            if file_key:
-                                aws_text = extract_text_from_s3(file_key)
-                                if aws_text and aws_text.strip():
-                                    extracted_text = aws_text
-                                else:
-                                    extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nThis PDF has been uploaded successfully. The document appears to contain images or formatted content that will be processed to create your learning materials."
-                            else:
-                                extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Processing content for learning activities."
-                        except:
-                            extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Content will be processed to create engaging learning materials."
+                    if len(extracted_text.strip()) > 200:
+                        local_success = True
+                        if max_pages < total_pages:
+                            extracted_text += f"\n[Note: Processed first {max_pages} pages of {total_pages} total pages for faster loading]\n"
                 
-                except Exception as pdf_error:
-                    # PDF processing failed, try AWS Textract
-                    try:
-                        file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
-                        if file_key:
-                            aws_text = extract_text_from_s3(file_key)
-                            if aws_text and aws_text.strip():
-                                extracted_text = aws_text
-                            else:
-                                extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument processing in progress. Content will be available shortly."
-                        else:
-                            extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded. Processing content for your learning experience."
-                    except:
-                        extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Preparing content for learning activities."
+            except Exception:
+                local_success = False
             
-            # For images, use AWS Textract
-            elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+            # PRIORITY 2: If local processing failed, try fast Textract
+            if not local_success:
+                progress_placeholder.info("📄 Using advanced OCR for image-based PDF...")
                 try:
                     file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
                     if file_key:
-                        aws_text = extract_text_from_s3(file_key)
-                        if aws_text and aws_text.strip():
+                        aws_text = extract_text_from_s3_fast(file_key)  # Fast version with timeout
+                        if aws_text and len(aws_text.strip()) > 100:
                             extracted_text = aws_text
-                        else:
-                            extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed to create learning materials."
+                            local_success = True
+                except Exception:
+                    pass
+            
+            # PRIORITY 3: Final fallback
+            if not local_success:
+                extracted_text = f"📄 PDF Document: {uploaded_file.name} ({file_size_mb:.1f}MB)\n\nDocument uploaded successfully. This appears to be an image-heavy PDF. Content will be processed to create your learning materials."
+        
+        # For images - Use FAST Textract with timeout
+        elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+            progress_placeholder.info("📷 Processing image content...")
+            try:
+                file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                if file_key:
+                    aws_text = extract_text_from_s3_fast(file_key)  # Fast version with 4-second timeout
+                    if aws_text and len(aws_text.strip()) > 20:
+                        extracted_text = f"📷 Image: {uploaded_file.name}\n\n{aws_text}"
                     else:
-                        extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Processing visual content..."
-                except:
-                    extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed."
+                        extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed to create engaging learning materials."
+                else:
+                    extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Processing visual content..."
+            except Exception:
+                extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed."
         
-        except Exception as e:
-            # Final fallback
-            extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Content is being prepared for your learning experience."
+        # For other file types
+        else:
+            try:
+                # Try to read as text file
+                uploaded_file.seek(0)
+                content = uploaded_file.read()
+                if isinstance(content, bytes):
+                    extracted_text = content.decode('utf-8', errors='ignore')
+                else:
+                    extracted_text = str(content)
+            except:
+                extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Content ready for learning activities."
         
-        # If no text extracted, show basic info
+        # Ensure we have some content
         if not extracted_text.strip():
             extracted_text = f"📄 Document: {uploaded_file.name}\n\nContent uploaded and ready for learning activities."
+        
+        # Clear progress indicator
+        progress_placeholder.empty()
         
         # STEP 3: SHOW TABS WITH EXTRACTED TEXT
         st.session_state.processed_content = {
