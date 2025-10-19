@@ -546,40 +546,6 @@ python3 test_async_api.py
 
 ---
 
-## 🎥 Demo Video Script
-
-**[0:00-0:15] Introduction**
-"EmoVerse AI uses AWS AI agents to create personalized social-emotional learning content."
-
-**[0:15-0:45] Student Demo**
-"Watch as our multi-agent system processes a real PDF, extracts text with Textract, and generates personalized content with Bedrock."
-
-**[0:45-1:15] Agent Orchestration**
-"Three AI agents work in parallel - Story Agent, Quiz Agent, and Lesson Agent - all coordinated by our Orchestrator."
-
-**[1:15-1:45] Intelligent Features**
-"Our 3-tier system adapts to student preferences. If they dislike a story, we regenerate. Still not happy? Our Playwright Agent searches the web."
-
-**[1:45-2:00] Teacher Portal**
-"Teachers get auto-generated lesson plans and real-time analytics, saving hours of work."
-
-**[2:00-2:15] Conclusion**
-"Built entirely on AWS serverless architecture, scalable, cost-effective, and production-ready."
-
----
-
-## 🏆 Why This Project Wins
-
-1. **True Multi-Agent System** - 6 specialized agents working together
-2. **Innovative Fallback** - 3-tier adaptive generation
-3. **Production Ready** - Fully deployed and functional
-4. **Real Impact** - Saves teachers hours, helps students learn
-5. **AWS Native** - Uses 9+ AWS services effectively
-6. **Scalable** - Serverless architecture handles any load
-7. **Cost Effective** - $0.05 per user session
-8. **Complete** - Frontend, backend, docs, deployment
-
----
 
 ## 📞 Links
 
@@ -592,10 +558,7 @@ python3 test_async_api.py
 
 ## 👥 Team
 
-[Your Name/Team Name]
-- AWS AI Agent Developer
-- Full-Stack Engineer
-- EdTech Innovator
+Agentic AI Specialist - Samreen Mahagami
 
 ---
 
