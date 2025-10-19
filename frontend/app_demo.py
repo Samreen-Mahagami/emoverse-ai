@@ -785,18 +785,24 @@ def check_textract_job(job_id):
         return 'ERROR', None
 
 def extract_text_from_s3_fast(file_key):
-    """NON-BLOCKING: Start job and check a few times, then return quickly"""
+    """OPTIMIZED: Start job and check with better timing for large documents"""
     try:
         # Start the job
         job_id = start_textract_job(file_key)
         if not job_id:
             return None
         
-        # Check status a few times with minimal delay
-        max_checks = 8  # Only check 8 times
+        # Optimized timing for different document sizes
+        max_checks = 20  # Increased for larger documents
         for attempt in range(max_checks):
-            if attempt > 0:  # Don't sleep on first check
-                time_module.sleep(0.5)  # Very short sleep
+            if attempt > 0:
+                # Progressive delay: start fast, then slower for large docs
+                if attempt < 5:
+                    time_module.sleep(1)  # Quick checks first
+                elif attempt < 10:
+                    time_module.sleep(2)  # Medium delay
+                else:
+                    time_module.sleep(3)  # Longer delay for large docs
             
             status, text = check_textract_job(job_id)
             
@@ -805,7 +811,7 @@ def extract_text_from_s3_fast(file_key):
             elif status == 'FAILED' or status == 'ERROR':
                 return None
         
-        # If still processing after 4 seconds, return None (don't wait)
+        # If still processing after reasonable time, return None
         return None
         
     except Exception as e:
@@ -2245,19 +2251,21 @@ def student_interface():
             file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Size in MB
             
             if file_size > 50:
-                st.info(f"📚 Large children's book detected ({file_size:.1f}MB). Processing ALL pages with batch optimization (~20-30 seconds).")
+                st.info(f"📚 Large document detected ({file_size:.1f}MB). Processing may take 20-30 seconds.")
             elif file_size > 25:
-                st.info(f"📖 Medium children's book detected ({file_size:.1f}MB). Processing ALL pages efficiently (~15-25 seconds).")
+                st.info(f"📖 Medium document detected ({file_size:.1f}MB). Processing may take 15-25 seconds.")
             elif file_size > 10:
-                st.info(f"📄 Children's book ({file_size:.1f}MB). Processing ALL pages for complete content (~10-15 seconds).")
+                st.info(f"📄 Processing document content ({file_size:.1f}MB) - ~10-15 seconds.")
             elif file_size > 5:
-                st.info(f"📚 Small children's book ({file_size:.1f}MB). Processing ALL pages quickly (~5-10 seconds).")
+                st.info(f"📚 Processing document ({file_size:.1f}MB) quickly - ~5-10 seconds.")
+            else:
+                st.info(f"🚀 Processing {uploaded_file.name} ({file_size:.1f}MB)...")
             
             # Store file for background processing
             st.session_state.current_file = uploaded_file
-            # Start processing flow
-            if not st.session_state.get('processing_file', False):
-                extract_text_immediately(uploaded_file)
+            
+            # Start processing flow - ensure it happens immediately
+            extract_text_immediately(uploaded_file)
         
         # Complete processing if in progress
         if st.session_state.get('processing_file', False) and uploaded_file:
@@ -2402,9 +2410,28 @@ def complete_text_extraction(uploaded_file):
             except:
                 extracted_text = f"Document: {uploaded_file.name}"
         
-        # Ensure we have some content
-        if not extracted_text.strip():
-            extracted_text = f"Document: {uploaded_file.name}\nContent uploaded successfully."
+        # Ensure we have some content - ALWAYS set something
+        if not extracted_text or not extracted_text.strip():
+            extracted_text = f"""📄 Document: {uploaded_file.name}
+
+✅ Your document has been uploaded successfully!
+
+📊 File Information:
+• File size: {len(uploaded_file.getvalue()) / 1024:.1f} KB
+• File type: {uploaded_file.name.split('.')[-1].upper() if '.' in uploaded_file.name else 'Unknown'}
+• Status: Processing complete
+
+🔍 Text Extraction Status:
+The system attempted to extract text from your document. If this is an image-based PDF or contains complex formatting, the text extraction might not capture all content perfectly.
+
+🎯 What's Available:
+Even if text extraction was limited, you can still:
+• Generate AI stories based on educational themes
+• Create interactive quizzes for your grade level  
+• Ask questions and get helpful answers
+• Explore emotional learning activities
+
+Your learning journey continues in the other tabs! 🌟"""
         
         # Clear progress message
         progress_placeholder.empty()
@@ -2650,30 +2677,61 @@ def display_processed_content():
         # Display extracted text in clean, readable format
         cleaned_text = content.get('cleaned_text', '')
         
+        # Debug: Always show what we have
+        st.write(f"🔍 Debug - Text length: {len(cleaned_text) if cleaned_text else 0}")
+        if cleaned_text:
+            st.write(f"🔍 First 100 chars: {cleaned_text[:100]}...")
+        
+        # Always try to display something
         if cleaned_text and len(cleaned_text.strip()) > 0:
-            import html
-            # Escape HTML characters to prevent InvalidCharacterError
-            safe_text = html.escape(cleaned_text)
-            # Convert newlines to HTML breaks for proper display
-            safe_text = safe_text.replace('\n', '<br>')
+            # Show extraction method info
+            if extraction_method != 'unknown':
+                method_info = {
+                    'pdfplumber': '✅ Text extracted using advanced PDF processing',
+                    'PyPDF2': '✅ Text extracted using standard PDF processing', 
+                    'aws_textract': '🤖 Text extracted using AI cloud processing',
+                    'text_file': '✅ Text file processed successfully',
+                    'image': '�️ ImPage uploaded - AI processing in progress',
+                    'fallback': '📄 PDF uploaded - AI processing in progress',
+                    'enhanced_fallback': '📄 PDF ready - AI content generation available',
+                    'generic': '✅ Document processed successfully',
+                    'generic_fallback': '📄 Document uploaded - processing in progress',
+                    'error_fallback': '⚠️ Basic processing completed'
+                }
+                if extraction_method in method_info:
+                    if extraction_method == 'enhanced_fallback':
+                        st.info(method_info[extraction_method])
+                        st.success("🎉 Ready to create amazing learning content for you!")
+                    else:
+                        st.success(method_info[extraction_method])
             
-            st.markdown(f"""
-                <div style='background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); 
-                            padding: 25px; 
-                            border-radius: 15px; 
-                            font-size: 1.1em; 
-                            line-height: 1.7;
-                            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                            max-height: 70vh;
-                            overflow-y: auto;
-                            margin: 15px 0;
-                            border: 1px solid rgba(255,255,255,0.2);'>
-                    {safe_text}
-                </div>
-            """, unsafe_allow_html=True)
+            # Display text in a simple, reliable text area
+            st.text_area(
+                "📖 Extracted Content:",
+                value=cleaned_text,
+                height=400,
+                disabled=True,
+                key="extracted_text_display"
+            )
+            
+            # Show word count for text content
+            word_count = len(cleaned_text.split())
+            if word_count > 10:
+                st.caption(f"📊 Content: {word_count} words extracted")
         else:
-            # Show message if no text is available
-            st.info("📄 Your document is ready! The content will appear here once processing is complete.")
+            # Show debug info and fallback
+            st.error("❌ No text content extracted")
+            st.write("🔍 Debug info:")
+            st.write(f"- Content keys: {list(content.keys()) if content else 'None'}")
+            st.write(f"- cleaned_text: '{cleaned_text}'" if cleaned_text else "Empty or None")
+            
+            # Try to show any available content
+            if content:
+                for key, value in content.items():
+                    if isinstance(value, str) and len(value) > 10:
+                        st.write(f"- {key}: {value[:100]}...")
+            
+            st.info("📄 Your document was uploaded but text extraction failed. This might happen with image-based PDFs or complex formatting.")
     
     with tab2:
         st.markdown("### 😊 Emotional Tone")
