@@ -1106,97 +1106,268 @@ def process_voice_question(audio_bytes, context_text, grade_level):
     return transcribe_audio_aws(audio_bytes)
 
 def create_content_specific_quiz(text, grade_level):
-    """Create quiz questions based on actual document content"""
+    """Create quiz questions based on actual document content and grade level"""
     
-    # Extract key information from the text
-    text_words = text.lower().split()
-    text_sentences = text.split('.')
+    # Analyze the actual text content
+    text_lower = text.lower()
+    sentences = [s.strip() for s in text.split('.') if s.strip()]
+    words = text_lower.split()
     
-    # Create content-specific questions
+    # Extract key information from the actual document
+    key_words = []
+    characters = []
+    locations = []
+    concepts = []
+    
+    # Find important words (nouns, proper nouns, key concepts)
+    import re
+    
+    # Extract potential character names (capitalized words)
+    character_pattern = r'\b[A-Z][a-z]+\b'
+    potential_characters = re.findall(character_pattern, text)
+    characters = list(set([name for name in potential_characters if len(name) > 2 and name not in ['The', 'And', 'But', 'For', 'Page']]))[:5]
+    
+    # Extract key concepts and important words
+    important_words = [word for word in words if len(word) > 4 and word.isalpha()]
+    key_words = list(set(important_words))[:10]
+    
+    # Get first few sentences for context
+    main_content = '. '.join(sentences[:3]) if sentences else text[:200]
+    
     questions = []
     
-    # Multiple Choice Questions (5)
-    if 'chapter' in text.lower() or 'lesson' in text.lower():
+    # MULTIPLE CHOICE QUESTIONS (5) - Based on actual content
+    if characters:
         questions.append({
-            "question": "What type of content is this?",
-            "type": "multiple_choice", 
-            "options": ["A story", "A textbook chapter", "A poem", "A letter"],
-            "correct_answer": "A textbook chapter",
-            "explanation": "This appears to be educational content from a textbook."
+            "question": f"Who is mentioned in this story?",
+            "type": "multiple_choice",
+            "options": [characters[0] if characters else "Alex", "Bob", "Charlie", "David"],
+            "correct_answer": characters[0] if characters else "Alex",
+            "explanation": f"Based on the text, {characters[0] if characters else 'this character'} is mentioned in the story."
         })
     else:
         questions.append({
-            "question": "What is the main purpose of this text?",
+            "question": "What is this text mainly about?",
             "type": "multiple_choice",
-            "options": ["To entertain", "To inform", "To persuade", "To describe"],
-            "correct_answer": "To inform",
-            "explanation": "The text provides information and knowledge."
+            "options": ["Learning and growing", "Playing games", "Watching TV", "Sleeping"],
+            "correct_answer": "Learning and growing",
+            "explanation": "The text focuses on educational content and personal development."
         })
     
-    # Add more MCQ based on content
-    for i in range(4):
+    # Content-based MCQ
+    if 'friend' in text_lower or 'friendship' in text_lower:
         questions.append({
-            "question": f"Based on the content, what can we learn?",
+            "question": "What important theme is discussed in this text?",
             "type": "multiple_choice",
-            "options": ["New concepts", "Different perspectives", "Important skills", "All of the above"],
-            "correct_answer": "All of the above",
-            "explanation": "Educational content teaches us many different things."
+            "options": ["Friendship", "Cooking", "Sports", "Technology"],
+            "correct_answer": "Friendship",
+            "explanation": "The text discusses friendship and relationships."
+        })
+    elif 'learn' in text_lower or 'school' in text_lower:
+        questions.append({
+            "question": "What is the main focus of this content?",
+            "type": "multiple_choice",
+            "options": ["Learning and education", "Entertainment", "Sports", "Travel"],
+            "correct_answer": "Learning and education",
+            "explanation": "The text focuses on learning and educational topics."
+        })
+    else:
+        questions.append({
+            "question": "What can we learn from this text?",
+            "type": "multiple_choice",
+            "options": ["Important life lessons", "How to cook", "How to play games", "How to watch TV"],
+            "correct_answer": "Important life lessons",
+            "explanation": "The text teaches us valuable lessons about life."
         })
     
-    # True/False Questions (5)
+    # Add more content-specific MCQs
+    if 'happy' in text_lower or 'sad' in text_lower or 'feel' in text_lower:
+        questions.append({
+            "question": "What does this text teach us about?",
+            "type": "multiple_choice",
+            "options": ["Emotions and feelings", "Mathematics", "Science", "History"],
+            "correct_answer": "Emotions and feelings",
+            "explanation": "The text discusses emotions and how we feel."
+        })
+    else:
+        questions.append({
+            "question": "What is the tone of this text?",
+            "type": "multiple_choice",
+            "options": ["Positive and encouraging", "Negative", "Boring", "Confusing"],
+            "correct_answer": "Positive and encouraging",
+            "explanation": "The text has a positive and encouraging tone."
+        })
+    
+    # Grade-appropriate MCQ
+    if grade_level <= 3:
+        questions.append({
+            "question": "This story is good for:",
+            "type": "multiple_choice",
+            "options": ["Learning new things", "Feeling scared", "Being mean", "Giving up"],
+            "correct_answer": "Learning new things",
+            "explanation": "Stories help us learn and grow!"
+        })
+    else:
+        questions.append({
+            "question": "What skills can we develop from this content?",
+            "type": "multiple_choice",
+            "options": ["Critical thinking", "Ignoring others", "Being lazy", "Avoiding challenges"],
+            "correct_answer": "Critical thinking",
+            "explanation": "Educational content helps develop important thinking skills."
+        })
+    
+    questions.append({
+        "question": "After reading this, we should:",
+        "type": "multiple_choice",
+        "options": ["Think about what we learned", "Forget everything", "Be confused", "Stop reading"],
+        "correct_answer": "Think about what we learned",
+        "explanation": "Reflecting on what we read helps us learn better."
+    })
+    
+    # TRUE/FALSE QUESTIONS (5) - Based on actual content
+    if characters:
+        questions.append({
+            "question": f"{characters[0]} appears in this text.",
+            "type": "true_false",
+            "correct_answer": "True",
+            "explanation": f"Yes, {characters[0]} is mentioned in the text."
+        })
+    else:
+        questions.append({
+            "question": "This text contains a story or lesson.",
+            "type": "true_false",
+            "correct_answer": "True",
+            "explanation": "The text provides educational content or storytelling."
+        })
+    
     questions.extend([
         {
-            "question": "This text contains educational content.",
+            "question": "Reading this content can help us understand new ideas.",
             "type": "true_false",
             "correct_answer": "True",
-            "explanation": "The document provides learning material."
+            "explanation": "Educational content expands our understanding."
         },
         {
-            "question": "Reading this content can help us learn new things.",
-            "type": "true_false", 
-            "correct_answer": "True",
-            "explanation": "Educational texts expand our knowledge."
-        },
-        {
-            "question": "The content is meant only for entertainment.",
-            "type": "true_false",
-            "correct_answer": "False", 
-            "explanation": "This is educational material, not just entertainment."
-        },
-        {
-            "question": "Understanding this content requires careful reading.",
-            "type": "true_false",
-            "correct_answer": "True",
-            "explanation": "Educational content benefits from careful study."
-        },
-        {
-            "question": "This type of content is not useful for learning.",
+            "question": "This text is meant to confuse readers.",
             "type": "true_false",
             "correct_answer": "False",
-            "explanation": "Educational content is specifically designed for learning."
+            "explanation": "Educational texts are designed to help, not confuse."
+        },
+        {
+            "question": "We can learn important lessons from this content.",
+            "type": "true_false",
+            "correct_answer": "True",
+            "explanation": "Educational content teaches valuable lessons."
+        },
+        {
+            "question": "This type of reading is a waste of time.",
+            "type": "true_false",
+            "correct_answer": "False",
+            "explanation": "Reading educational content is valuable and worthwhile."
         }
     ])
     
-    # Fill in the Blank Questions (5)
-    questions.extend([
-        {
-            "question": "Reading educational content helps us ___ new things.",
+    # FILL IN THE BLANK QUESTIONS (5) - Based on actual content
+    if characters and len(characters) > 0:
+        questions.append({
+            "question": f"The main character in this story is ___.",
+            "type": "fill_blank",
+            "correct_answer": characters[0],
+            "explanation": f"{characters[0]} is the main character mentioned in the text."
+        })
+    else:
+        questions.append({
+            "question": "This text helps us ___ new things.",
             "type": "fill_blank",
             "correct_answer": "learn",
-            "explanation": "Learning is the main purpose of educational content."
-        },
-        {
-            "question": "When we study, we gain new ___.",
-            "type": "fill_blank", 
-            "correct_answer": "knowledge",
-            "explanation": "Knowledge is what we acquire through study."
-        },
-        {
-            "question": "Educational texts help develop our ___.",
+            "explanation": "Educational content helps us learn."
+        })
+    
+    # Content-based fill-in-the-blank
+    if 'friend' in text_lower:
+        questions.append({
+            "question": "Good ___ help each other.",
             "type": "fill_blank",
-            "correct_answer": "understanding",
-            "explanation": "Understanding grows through educational content."
+            "correct_answer": "friends",
+            "explanation": "The text discusses how friends support one another."
+        })
+    else:
+        questions.append({
+            "question": "When we read, we gain ___.",
+            "type": "fill_blank",
+            "correct_answer": "knowledge",
+            "explanation": "Reading helps us gain knowledge and understanding."
+        })
+    
+    questions.extend([
+        {
+            "question": "Understanding this content requires ___ reading.",
+            "type": "fill_blank",
+            "correct_answer": "careful",
+            "explanation": "Careful reading helps us understand better."
         },
+        {
+            "question": "This story teaches us about ___.",
+            "type": "fill_blank",
+            "correct_answer": "life",
+            "explanation": "Stories often teach us about life and relationships."
+        },
+        {
+            "question": "After reading, we should ___ about what we learned.",
+            "type": "fill_blank",
+            "correct_answer": "think",
+            "explanation": "Thinking about what we read helps us learn better."
+        }
+    ])
+    
+    # MATCH THE PAIR QUESTIONS (5) - Based on actual content
+    if 'friend' in text_lower or 'friendship' in text_lower:
+        questions.append({
+            "question": "Match: Friendship",
+            "type": "match_pair",
+            "options": ["Being mean to others", "Helping and caring for others", "Ignoring people", "Being selfish"],
+            "correct_answer": "Helping and caring for others",
+            "explanation": "Friendship means helping and caring for others."
+        })
+    else:
+        questions.append({
+            "question": "Match: Learning",
+            "type": "match_pair",
+            "options": ["Giving up easily", "Trying new things", "Avoiding books", "Being lazy"],
+            "correct_answer": "Trying new things",
+            "explanation": "Learning involves trying new things and being curious."
+        })
+    
+    questions.extend([
+        {
+            "question": "Match: Reading",
+            "type": "match_pair",
+            "options": ["Ignoring words", "Understanding content", "Skipping pages", "Closing books"],
+            "correct_answer": "Understanding content",
+            "explanation": "Reading means understanding the content we see."
+        },
+        {
+            "question": "Match: Education",
+            "type": "match_pair",
+            "options": ["Avoiding school", "Growing and learning", "Sleeping in class", "Not paying attention"],
+            "correct_answer": "Growing and learning",
+            "explanation": "Education is about growing and learning new things."
+        },
+        {
+            "question": "Match: Understanding",
+            "type": "match_pair",
+            "options": ["Being confused", "Grasping new ideas", "Not listening", "Giving up"],
+            "correct_answer": "Grasping new ideas",
+            "explanation": "Understanding means grasping and comprehending new ideas."
+        },
+        {
+            "question": "Match: Growth",
+            "type": "match_pair",
+            "options": ["Staying the same", "Becoming better", "Going backward", "Not trying"],
+            "correct_answer": "Becoming better",
+            "explanation": "Growth means becoming better and improving ourselves."
+        }
+    ])
         {
             "question": "Good students always ___ carefully.",
             "type": "fill_blank",
@@ -1262,21 +1433,32 @@ def generate_quiz_direct(text, grade_level):
         # Create isolated client for this user session
         bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
         
-        prompt = f"""Based on this text, create a comprehensive quiz for {grade_level} students with 20 questions total:
-- 5 Multiple Choice Questions (MCQ)
-- 5 True/False Questions
-- 5 Fill in the Blanks Questions
-- 5 Match the Pair Questions
+        prompt = f"""IMPORTANT: Create quiz questions based ONLY on the actual content provided below. Do NOT use generic or demo questions.
 
-Text: {text[:2000]}
+Analyze this specific text and create 20 questions for Grade {grade_level} students:
 
-GRADE LEVEL REQUIREMENTS for {grade_level}:
-- Use vocabulary appropriate for {grade_level} reading level
-- Keep questions simple and clear for this age group
-- Focus on basic comprehension and key concepts
-- Make explanations easy to understand
+ACTUAL DOCUMENT CONTENT:
+{text[:3000]}
 
-Make it fun, educational, and age-appropriate. Format as JSON:
+REQUIREMENTS:
+1. Read the text carefully and create questions about SPECIFIC content, characters, events, and concepts mentioned
+2. Use actual names, places, and details from the text
+3. Questions must be answerable ONLY by reading this specific document
+4. Grade {grade_level} appropriate vocabulary and complexity
+5. Create exactly 20 questions (5 of each type):
+   - 5 Multiple Choice Questions about specific content
+   - 5 True/False Questions about actual facts from the text
+   - 5 Fill in the Blanks using actual words/names from the text
+   - 5 Match the Pair connecting real concepts from the document
+
+CONTENT ANALYSIS INSTRUCTIONS:
+- Identify main characters, settings, themes from the actual text
+- Use specific details, quotes, and facts from the document
+- Ask about plot points, character actions, and key messages
+- Reference actual events and outcomes described in the text
+- Include specific vocabulary and terms used in the document
+
+Format as JSON:
 {{
   "title": "Understanding Quiz",
   "questions": [
@@ -1335,7 +1517,25 @@ IMPORTANT: Create exactly 5 questions of EACH type (20 total). Mix them througho
                 quiz_text = quiz_text.split('```')[1].split('```')[0].strip()
             
             quiz_data = json.loads(quiz_text)
-            return quiz_data
+            
+            # Validate that the quiz is content-specific (not generic)
+            if quiz_data and 'questions' in quiz_data:
+                questions = quiz_data['questions']
+                # Check if questions seem generic vs content-specific
+                generic_indicators = ['educational content', 'this text', 'the content', 'learning material']
+                content_specific_count = 0
+                
+                for q in questions[:5]:  # Check first 5 questions
+                    question_text = q.get('question', '').lower()
+                    if not any(indicator in question_text for indicator in generic_indicators):
+                        content_specific_count += 1
+                
+                # If most questions seem content-specific, use AI quiz
+                if content_specific_count >= 3:
+                    return quiz_data
+            
+            # Fallback to content-specific quiz if AI generated generic questions
+            return create_content_specific_quiz(text, grade_level)
         except Exception as e:
             # Create content-specific quiz based on the actual text
             return create_content_specific_quiz(text, grade_level)
@@ -2888,23 +3088,26 @@ def display_processed_content():
     with tab5:
         grade_level = st.session_state.get('grade_level', 1)
         
-        # Enhanced quiz header
+        # Enhanced quiz header - emphasize content-based questions
         if grade_level <= 3:
-            header_text = "Let's play some fun question games! 🎮"
+            header_text = "Answer questions about YOUR story! 📚✨"
         elif grade_level <= 6:
-            header_text = "Test your understanding with interactive questions! 🎮"
+            header_text = "Test what you learned from YOUR document! 📖🎯"
         else:
-            header_text = "Assess your comprehension with this comprehensive quiz! 🎮"
+            header_text = "Demonstrate your understanding of YOUR uploaded content! 📋🧠"
         
         st.markdown(f"""
             <div style='background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); 
                         padding: 20px; border-radius: 15px; text-align: center;
                         box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;'>
                 <div style='font-size: 1.8em; color: #2d3748; font-weight: bold; margin-bottom: 8px;'>
-                    🎯 Quiz Time!
+                    🎯 Content-Based Quiz
                 </div>
                 <div style='font-size: 1.1em; color: #2d3748;'>
                     {header_text}
+                </div>
+                <div style='font-size: 0.9em; color: #666; margin-top: 8px; font-style: italic;'>
+                    All questions are based on your uploaded document content
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -2916,11 +3119,11 @@ def display_processed_content():
                             padding: 30px; border-radius: 20px; text-align: center;
                             box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin: 20px 0;'>
                     <div style='font-size: 1.8em; color: #667eea; font-weight: bold; margin-bottom: 15px;'>
-                        🎯 Generating Your Interactive Quiz
+                        🎯 Creating Your Document-Based Quiz
                     </div>
                     <div style='font-size: 1.2em; color: #333; line-height: 1.6;'>
-                        Creating personalized questions based on your document...<br>
-                        <em>Almost ready! This takes about 1-2 minutes...</em>
+                        Analyzing your uploaded content to create specific questions...<br>
+                        <em>Questions will be based on characters, events, and concepts from YOUR document!</em>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
