@@ -3606,9 +3606,7 @@ def teacher_interface():
                 generate_button = st.button("Generate Lesson Plan", use_container_width=True)
             
             if generate_button:
-                if not uploaded_file:
-                    st.error("📎 Please upload a file first to generate a lesson plan!")
-                else:
+                if uploaded_file:
                     # Process the uploaded file to extract content
                     with st.spinner("📖 Analyzing your uploaded content..."):
                         try:
@@ -3645,6 +3643,11 @@ def teacher_interface():
                             if lesson_plan:
                                 st.success("✅ Lesson plan generated successfully!")
                                 st.info("📋 AI-generated lesson plan based on your uploaded content:")
+                                
+                                # Debug: Show lesson plan structure
+                                with st.expander("🔍 Debug: Lesson Plan Data", expanded=False):
+                                    st.json(lesson_plan)
+                                
                                 display_lesson_plan(lesson_plan)
                             else:
                                 st.error("❌ Failed to generate lesson plan. Please try again.")
@@ -3823,6 +3826,11 @@ def teacher_interface():
         return error_text.encode('utf-8')
 
 def display_lesson_plan(plan):
+    # Debug: Check if plan data exists
+    if not plan:
+        st.error("❌ No lesson plan data received")
+        return
+    
     st.markdown(f"""
         <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                     padding: 30px; border-radius: 20px; text-align: center;
