@@ -2306,90 +2306,107 @@ def complete_text_extraction(uploaded_file):
         progress_placeholder = st.empty()
         progress_placeholder.info("⚡ Fast processing your document...")
         
+        # DEBUG: Show file info
+        st.write(f"DEBUG: Processing {uploaded_file.name}, Size: {file_size_mb:.1f}MB")
+        
         # STEP 2: ULTRA-FAST TEXT EXTRACTION
         if uploaded_file.name.lower().endswith('.pdf'):
-            # PRIORITY 1: Try local PDF processing first (fastest)
+            # PRIORITY 1: Try multiple PDF extraction methods
             local_success = False
+            
+            # METHOD 1: Try pdfplumber first
             try:
-                # Try pdfplumber first (fastest for most PDFs)
-                try:
-                    import pdfplumber
-                    uploaded_file.seek(0)
+                import pdfplumber
+                uploaded_file.seek(0)
+                
+                with pdfplumber.open(uploaded_file) as pdf:
+                    total_pages = len(pdf.pages)
+                    st.write(f"DEBUG: PDF has {total_pages} pages")
+                    progress_placeholder.info(f"📄 Processing PDF ({total_pages} pages, {file_size_mb:.1f}MB)...")
                     
-                    with pdfplumber.open(uploaded_file) as pdf:
-                        total_pages = len(pdf.pages)
-                        progress_placeholder.info(f"📄 Processing PDF ({total_pages} pages, {file_size_mb:.1f}MB)...")
-                        
-                        # SPEED OPTIMIZATION: Smart page limiting
-                        if file_size_mb > 10:  # For files > 10MB
-                            max_pages = min(50, total_pages)  # Increased from 30 to 50
-                        elif file_size_mb > 5:  # For files > 5MB
-                            max_pages = min(100, total_pages)  # Increased from 60 to 100
-                        else:
-                            max_pages = total_pages  # Process all pages for smaller files
-                        
-                        # FAST batch processing with better error handling
-                        pages_processed = 0
-                        for page_num in range(max_pages):
-                            try:
-                                page_text = pdf.pages[page_num].extract_text()
-                                if page_text and page_text.strip():
-                                    extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
-                                    pages_processed += 1
-                                    
-                                    # Show progress every 10 pages
-                                    if pages_processed % 10 == 0:
-                                        progress_placeholder.info(f"📄 Processed {pages_processed}/{max_pages} pages...")
-                            except Exception as e:
-                                continue  # Skip problematic pages quickly
-                        
-                        # Lower threshold for success - even 50 characters is useful
-                        if len(extracted_text.strip()) > 50:
-                            local_success = True
-                            if max_pages < total_pages:
-                                extracted_text += f"\n[Note: Processed first {max_pages} pages of {total_pages} total pages for faster loading]\n"
-                            progress_placeholder.info(f"✅ Successfully extracted text from {pages_processed} pages!")
+                    # Process first few pages to get content quickly
+                    max_pages = min(20, total_pages)  # Start with just 20 pages for speed
+                    
+                    pages_processed = 0
+                    for page_num in range(max_pages):
+                        try:
+                            page_text = pdf.pages[page_num].extract_text()
+                            st.write(f"DEBUG: Page {page_num + 1} text length: {len(page_text) if page_text else 0}")
                             
-                except ImportError:
-                    # Fallback to PyPDF2
-                    progress_placeholder.info("📄 Using PyPDF2 for text extraction...")
+                            if page_text and page_text.strip():
+                                extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                                pages_processed += 1
+                        except Exception as e:
+                            st.write(f"DEBUG: Error on page {page_num + 1}: {str(e)}")
+                            continue
+                    
+                    st.write(f"DEBUG: Total extracted text length: {len(extracted_text)}")
+                    
+                    if len(extracted_text.strip()) > 10:  # Very low threshold
+                        local_success = True
+                        progress_placeholder.info(f"✅ pdfplumber: Extracted text from {pages_processed} pages!")
+                    else:
+                        st.write("DEBUG: pdfplumber failed - not enough text extracted")
+                        
+            except Exception as e:
+                st.write(f"DEBUG: pdfplumber failed: {str(e)}")
+            
+            # METHOD 2: Try PyPDF2 if pdfplumber failed
+            if not local_success:
+                try:
                     import PyPDF2
                     uploaded_file.seek(0)
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     total_pages = len(pdf_reader.pages)
                     
-                    # SPEED OPTIMIZATION: Smart page limiting
-                    if file_size_mb > 10:
-                        max_pages = min(50, total_pages)
-                    elif file_size_mb > 5:
-                        max_pages = min(100, total_pages)
-                    else:
-                        max_pages = total_pages
+                    st.write(f"DEBUG: PyPDF2 - PDF has {total_pages} pages")
+                    progress_placeholder.info("📄 Trying PyPDF2 extraction...")
                     
+                    extracted_text = ""  # Reset
+                    max_pages = min(20, total_pages)
                     pages_processed = 0
+                    
                     for page_num in range(max_pages):
                         try:
                             page_text = pdf_reader.pages[page_num].extract_text()
+                            st.write(f"DEBUG: PyPDF2 Page {page_num + 1} text length: {len(page_text) if page_text else 0}")
+                            
                             if page_text and page_text.strip():
                                 extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
                                 pages_processed += 1
-                                
-                                # Show progress every 10 pages
-                                if pages_processed % 10 == 0:
-                                    progress_placeholder.info(f"📄 Processed {pages_processed}/{max_pages} pages...")
                         except Exception as e:
+                            st.write(f"DEBUG: PyPDF2 Error on page {page_num + 1}: {str(e)}")
                             continue
                     
-                    # Lower threshold for success
-                    if len(extracted_text.strip()) > 50:
+                    st.write(f"DEBUG: PyPDF2 Total extracted text length: {len(extracted_text)}")
+                    
+                    if len(extracted_text.strip()) > 10:
                         local_success = True
-                        if max_pages < total_pages:
-                            extracted_text += f"\n[Note: Processed first {max_pages} pages of {total_pages} total pages for faster loading]\n"
-                        progress_placeholder.info(f"✅ Successfully extracted text from {pages_processed} pages!")
-                
-            except Exception as e:
-                progress_placeholder.info(f"⚠️ Local PDF processing failed: {str(e)}")
-                local_success = False
+                        progress_placeholder.info(f"✅ PyPDF2: Extracted text from {pages_processed} pages!")
+                    else:
+                        st.write("DEBUG: PyPDF2 also failed - not enough text extracted")
+                        
+                except Exception as e:
+                    st.write(f"DEBUG: PyPDF2 failed: {str(e)}")
+            
+            # METHOD 3: Try basic text extraction
+            if not local_success:
+                try:
+                    uploaded_file.seek(0)
+                    raw_content = uploaded_file.read()
+                    
+                    # Try to decode as text
+                    try:
+                        text_content = raw_content.decode('utf-8', errors='ignore')
+                        if len(text_content.strip()) > 50:
+                            extracted_text = f"Raw text content:\n{text_content}"
+                            local_success = True
+                            st.write("DEBUG: Raw text extraction succeeded")
+                    except:
+                        st.write("DEBUG: Raw text extraction failed")
+                        
+                except Exception as e:
+                    st.write(f"DEBUG: Raw extraction failed: {str(e)}")
             
             # PRIORITY 2: If local processing failed, try fast Textract
             if not local_success:
@@ -2457,13 +2474,22 @@ Your learning materials are being prepared and will be available shortly."""
         if not extracted_text.strip():
             extracted_text = f"📄 Document: {uploaded_file.name}\n\nContent uploaded and ready for learning activities."
         
+        # DEBUG: Show final extracted text info
+        st.write(f"DEBUG: Final extracted text length: {len(extracted_text)}")
+        st.write(f"DEBUG: First 200 characters: {extracted_text[:200]}...")
+        
+        # Ensure we have SOME content
+        if not extracted_text.strip():
+            extracted_text = f"📄 PDF Document: {uploaded_file.name} ({file_size_mb:.1f}MB)\n\nThis is a test document that has been uploaded successfully."
+            st.write("DEBUG: Using fallback content")
+        
         # Clear progress indicator and show final status
         if len(extracted_text.strip()) > 100:
             progress_placeholder.success(f"✅ Document processed successfully! Extracted {len(extracted_text)} characters.")
         else:
             progress_placeholder.warning("⚠️ Limited text extracted - document may be image-based.")
         
-        # Clear after 2 seconds
+        # Clear after 1 second
         import time
         time.sleep(1)
         progress_placeholder.empty()
