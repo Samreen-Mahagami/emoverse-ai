@@ -3815,22 +3815,154 @@ def teacher_interface():
                 st.session_state.teacher_id = None
                 st.rerun()
 
-def display_lesson_plan(plan):
-    st.markdown(f"""
-        <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                    padding: 30px; border-radius: 20px; text-align: center;
-                    color: white; margin-bottom: 30px;'>
-            <div style='font-size: 2.5em; font-weight: bold;'>
-                📚 {plan.get('lesson_title', 'Lesson Plan')}
-            </div>
-            <div style='font-size: 1.3em; margin-top: 10px;'>
-                Grade {plan.get('grade_level')} | {plan.get('duration_minutes')} minutes
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Download button
-    lesson_text = f"""
+def generate_lesson_plan_pdf(plan):
+    """Generate a professional PDF for the lesson plan"""
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from io import BytesIO
+        
+        # Create a BytesIO buffer to hold the PDF
+        buffer = BytesIO()
+        
+        # Create the PDF document
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        
+        # Get styles
+        styles = getSampleStyleSheet()
+        
+        # Custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            spaceAfter=30,
+            alignment=1,  # Center alignment
+            textColor=colors.HexColor('#667eea')
+        )
+        
+        header_style = ParagraphStyle(
+            'CustomHeader',
+            parent=styles['Heading2'],
+            fontSize=16,
+            spaceAfter=12,
+            textColor=colors.HexColor('#2d3748'),
+            backColor=colors.HexColor('#f7fafc')
+        )
+        
+        subheader_style = ParagraphStyle(
+            'CustomSubHeader',
+            parent=styles['Heading3'],
+            fontSize=14,
+            spaceAfter=8,
+            textColor=colors.HexColor('#4a5568')
+        )
+        
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=11,
+            spaceAfter=6,
+            leftIndent=20
+        )
+        
+        # Build the PDF content
+        story = []
+        
+        # Title
+        title = f"📚 {plan.get('lesson_title', 'Lesson Plan')}"
+        story.append(Paragraph(title, title_style))
+        story.append(Spacer(1, 12))
+        
+        # Basic Info
+        info_data = [
+            ['Grade Level:', f"Grade {plan.get('grade_level')}"],
+            ['Duration:', f"{plan.get('duration_minutes')} minutes"],
+            ['Content Source:', plan.get('content_source', 'Based on uploaded material')]
+        ]
+        
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e2e8f0')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 11),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#cbd5e0'))
+        ]))
+        
+        story.append(info_table)
+        story.append(Spacer(1, 20))
+        
+        # Learning Objectives
+        story.append(Paragraph("🎯 Learning Objectives", header_style))
+        for obj in plan.get('learning_objectives', []):
+            story.append(Paragraph(f"• {obj}", normal_style))
+        story.append(Spacer(1, 15))
+        
+        # SEL Competencies
+        story.append(Paragraph("💡 SEL Competencies", header_style))
+        for comp in plan.get('sel_competencies', []):
+            story.append(Paragraph(f"⭐ {comp}", normal_style))
+        story.append(Spacer(1, 20))
+        
+        # Lesson Phases
+        phases = plan.get('phases', {})
+        
+        # Warm-up
+        warmup = phases.get('warmup', {})
+        story.append(Paragraph(f"🔥 Warm-up ({warmup.get('duration_minutes', 0)} minutes)", header_style))
+        for activity in warmup.get('activities', []):
+            story.append(Paragraph(f"• {activity}", normal_style))
+        story.append(Spacer(1, 15))
+        
+        # Reading & Discussion
+        reading = phases.get('reading_discussion', {})
+        story.append(Paragraph(f"📖 Reading & Discussion ({reading.get('duration_minutes', 0)} minutes)", header_style))
+        for activity in reading.get('activities', []):
+            story.append(Paragraph(f"• {activity}", normal_style))
+        story.append(Spacer(1, 15))
+        
+        # Practice Activity
+        practice = phases.get('practice_activity', {})
+        story.append(Paragraph(f"✏️ Practice Activity ({practice.get('duration_minutes', 0)} minutes)", header_style))
+        for activity in practice.get('activities', []):
+            story.append(Paragraph(f"• {activity}", normal_style))
+        story.append(Spacer(1, 15))
+        
+        # Wrap-up
+        wrapup = phases.get('wrap_up', {})
+        story.append(Paragraph(f"🎯 Wrap-up ({wrapup.get('duration_minutes', 0)} minutes)", header_style))
+        for method in wrapup.get('methods', []):
+            story.append(Paragraph(f"• {method}", normal_style))
+        
+        # Footer
+        story.append(Spacer(1, 30))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=10,
+            alignment=1,
+            textColor=colors.HexColor('#718096')
+        )
+        story.append(Paragraph("Generated by EmoVerse AI - Social Emotional Learning Platform", footer_style))
+        
+        # Build PDF
+        doc.build(story)
+        
+        # Get the PDF data
+        pdf_data = buffer.getvalue()
+        buffer.close()
+        
+        return pdf_data
+        
+    except ImportError:
+        # Fallback to text if reportlab is not available
+        lesson_text = f"""
 LESSON PLAN: {plan.get('lesson_title', 'Lesson Plan')}
 Grade Level: {plan.get('grade_level')}
 Duration: {plan.get('duration_minutes')} minutes
@@ -3852,15 +3984,66 @@ PRACTICE ACTIVITY ({plan.get('phases', {}).get('practice_activity', {}).get('dur
 
 WRAP-UP ({plan.get('phases', {}).get('wrap_up', {}).get('duration_minutes', 0)} minutes):
 {chr(10).join('- ' + method for method in plan.get('phases', {}).get('wrap_up', {}).get('methods', []))}
+
+Generated by EmoVerse AI - Social Emotional Learning Platform
 """
+        return lesson_text.encode('utf-8')
     
-    st.download_button(
-        label="📥 Download Lesson Plan",
-        data=lesson_text,
-        file_name=f"lesson_plan_{plan.get('lesson_title', 'plan').replace(' ', '_')}.txt",
-        mime="text/plain",
-        use_container_width=True
-    )
+    except Exception as e:
+        # Error fallback
+        error_text = f"Error generating PDF: {str(e)}\n\nLesson Plan: {plan.get('lesson_title', 'Lesson Plan')}"
+        return error_text.encode('utf-8')
+
+def display_lesson_plan(plan):
+    st.markdown(f"""
+        <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    padding: 30px; border-radius: 20px; text-align: center;
+                    color: white; margin-bottom: 30px;'>
+            <div style='font-size: 2.5em; font-weight: bold;'>
+                📚 {plan.get('lesson_title', 'Lesson Plan')}
+            </div>
+            <div style='font-size: 1.3em; margin-top: 10px;'>
+                Grade {plan.get('grade_level')} | {plan.get('duration_minutes')} minutes
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Generate PDF for download
+    try:
+        pdf_data = generate_lesson_plan_pdf(plan)
+        
+        # Check if it's actually PDF data or fallback text
+        if pdf_data.startswith(b'%PDF'):
+            # It's a real PDF
+            st.download_button(
+                label="📥 Download Lesson Plan (PDF)",
+                data=pdf_data,
+                file_name=f"lesson_plan_{plan.get('lesson_title', 'plan').replace(' ', '_').replace(':', '')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+        else:
+            # It's fallback text data
+            st.download_button(
+                label="📥 Download Lesson Plan (Text)",
+                data=pdf_data,
+                file_name=f"lesson_plan_{plan.get('lesson_title', 'plan').replace(' ', '_').replace(':', '')}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+            st.info("💡 PDF generation requires additional libraries. Downloaded as text file.")
+    
+    except Exception as e:
+        st.error(f"❌ Error generating download: {str(e)}")
+        # Provide basic text download as ultimate fallback
+        lesson_text = f"LESSON PLAN: {plan.get('lesson_title', 'Lesson Plan')}\nGrade Level: {plan.get('grade_level')}\nDuration: {plan.get('duration_minutes')} minutes"
+        st.download_button(
+            label="📥 Download Lesson Plan (Basic Text)",
+            data=lesson_text,
+            file_name=f"lesson_plan_basic.txt",
+            mime="text/plain",
+            use_container_width=True
+        )
     
     st.markdown("<br>", unsafe_allow_html=True)
     
