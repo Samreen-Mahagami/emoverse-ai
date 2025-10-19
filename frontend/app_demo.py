@@ -3520,7 +3520,35 @@ def display_processed_content():
             else:
                 st.info("⏳ Quiz is still generating... Please wait.")
         else:
-            st.warning("📤 Please upload and process a document first to generate a quiz!")
+            # Check if we have extracted text but no quiz yet
+            if content.get('cleaned_text') and len(content.get('cleaned_text', '').strip()) > 50:
+                st.markdown("""
+                    <div style='background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); 
+                                padding: 25px; border-radius: 15px; text-align: center;
+                                box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 20px 0;'>
+                        <div style='font-size: 1.6em; color: #667eea; font-weight: bold; margin-bottom: 15px;'>
+                            🎯 Generate Your Quiz Now!
+                        </div>
+                        <div style='font-size: 1.1em; color: #333; line-height: 1.6; margin-bottom: 20px;'>
+                            Your document is ready! Click below to create questions based on your content.
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button("🎯 Generate Quiz from My Document", use_container_width=True, key="generate_quiz_now"):
+                    with st.spinner("🎯 Creating quiz questions from your document..."):
+                        try:
+                            quiz = generate_quiz_direct(content.get('cleaned_text', ''), st.session_state.grade_level)
+                            if quiz:
+                                st.session_state.direct_quiz = quiz
+                                st.success("✅ Quiz generated successfully!")
+                                st.rerun()
+                            else:
+                                st.error("❌ Failed to generate quiz. Please try again.")
+                        except Exception as e:
+                            st.error(f"❌ Error generating quiz: {str(e)}")
+            else:
+                st.warning("📤 Please upload and process a document first to generate a quiz!")
 
 def display_aws_quiz(quiz_data):
     """Display AWS-generated quiz with organized tabs"""
