@@ -1539,8 +1539,12 @@ def search_external_stories(topic, grade_level, emotional_theme=None):
 def generate_lesson_plan_from_content(extracted_text, grade_level, duration):
     """Generate lesson plan based on actual uploaded content using Bedrock"""
     try:
-        import boto3
-        bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
+        # Skip Bedrock for demo - go directly to fallback
+        return create_content_based_lesson_plan(extracted_text, grade_level, duration)
+        
+        # Original Bedrock code (commented out for demo)
+        # import boto3
+        # bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
         
         # Calculate phase durations in clean 5-minute intervals
         def calculate_clean_durations(total_duration):
@@ -3606,6 +3610,7 @@ def teacher_interface():
                 generate_button = st.button("Generate Lesson Plan", use_container_width=True)
             
             if generate_button:
+                st.info("🔄 Generate button clicked - processing...")
                 if uploaded_file:
                     # Process the uploaded file to extract content
                     with st.spinner("📖 Analyzing your uploaded content..."):
@@ -3661,6 +3666,12 @@ def teacher_interface():
                         except Exception as e:
                             st.error(f"❌ Error processing file: {str(e)}")
                             st.info("💡 Please try uploading a different file or check the file format.")
+                            
+                            # Show detailed error for debugging
+                            with st.expander("🔍 Error Details", expanded=False):
+                                st.code(str(e))
+                                import traceback
+                                st.code(traceback.format_exc())
         
         with tab2:
             st.header("Student Analytics Dashboard")
