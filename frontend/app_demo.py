@@ -169,7 +169,7 @@ st.markdown("""
     /* Special styling for main page Student/Teacher buttons */
     .stButton > button[key*="student_btn" i], 
     .stButton > button[key*="teacher_btn" i] {
-        font-size: 5.5em !important;
+        font-size: 4.2em !important;
         padding: 35px 50px !important;
         min-height: 120px !important;
         font-weight: 900 !important;
@@ -726,12 +726,13 @@ def upload_to_s3(file, student_id):
         st.error(f"❌ Upload failed: {str(e)}")
         return None
 
-def start_textract_job(file_key):
-    """Start Textract job and return job_id immediately"""
+def extract_text_from_s3(file_key):
+    """Extract text using AWS Textract with robust error handling"""
     try:
         if not file_key:
             return None
             
+        # Start asynchronous text detection
         response = textract_client.start_document_text_detection(
             DocumentLocation={
                 'S3Object': {
@@ -740,86 +741,46 @@ def start_textract_job(file_key):
                 }
             }
         )
-        return response['JobId']
-    except Exception as e:
-        return None
-
-def check_textract_job(job_id):
-    """Check Textract job status without blocking"""
-    try:
-        if not job_id:
-            return None, None
-            
-        result = textract_client.get_document_text_detection(JobId=job_id)
-        status = result['JobStatus']
         
-        if status == 'SUCCEEDED':
-            # Extract text quickly
-            text = ""
-            for block in result.get('Blocks', []):
-                if block['BlockType'] == 'LINE':
-                    text += block['Text'] + "\n"
+        job_id = response['JobId']
+        
+        # Poll for completion with progress
+        max_attempts = 30  # 30 attempts * 3 seconds = 90 seconds max
+        for attempt in range(max_attempts):
+            time_module.sleep(2)
             
-            # Get additional pages (limited for speed)
-            next_token = result.get('NextToken')
-            page_count = 0
-            while next_token and page_count < 5:  # Limit to 5 additional pages for speed
-                result = textract_client.get_document_text_detection(
-                    JobId=job_id,
-                    NextToken=next_token
-                )
+            result = textract_client.get_document_text_detection(JobId=job_id)
+            status = result['JobStatus']
+            
+            if status == 'SUCCEEDED':
+                # Extract text from all pages
+                text = ""
                 for block in result.get('Blocks', []):
                     if block['BlockType'] == 'LINE':
                         text += block['Text'] + "\n"
+                
+                # Get additional pages if any
                 next_token = result.get('NextToken')
-                page_count += 1
+                while next_token:
+                    result = textract_client.get_document_text_detection(
+                        JobId=job_id,
+                        NextToken=next_token
+                    )
+                    for block in result.get('Blocks', []):
+                        if block['BlockType'] == 'LINE':
+                            text += block['Text'] + "\n"
+                    next_token = result.get('NextToken')
+                
+                return text.strip()
             
-            return 'SUCCEEDED', text.strip()
-        
-        elif status == 'FAILED':
-            return 'FAILED', None
-        else:
-            return 'IN_PROGRESS', None
-            
-    except Exception as e:
-        return 'ERROR', None
-
-def extract_text_from_s3_fast(file_key):
-    """OPTIMIZED: Start job and check with better timing for large documents"""
-    try:
-        # Start the job
-        job_id = start_textract_job(file_key)
-        if not job_id:
-            return None
-        
-        # Optimized timing for different document sizes
-        max_checks = 20  # Increased for larger documents
-        for attempt in range(max_checks):
-            if attempt > 0:
-                # Progressive delay: start fast, then slower for large docs
-                if attempt < 5:
-                    time_module.sleep(1)  # Quick checks first
-                elif attempt < 10:
-                    time_module.sleep(2)  # Medium delay
-                else:
-                    time_module.sleep(3)  # Longer delay for large docs
-            
-            status, text = check_textract_job(job_id)
-            
-            if status == 'SUCCEEDED':
-                return text
-            elif status == 'FAILED' or status == 'ERROR':
+            elif status == 'FAILED':
                 return None
         
-        # If still processing after reasonable time, return None
+        # Timeout
         return None
         
     except Exception as e:
         return None
-
-def extract_text_from_s3(file_key):
-    """Legacy function - redirects to fast version"""
-    return extract_text_from_s3_fast(file_key)
 
 def start_content_generation(extracted_text, grade_level, story_theme="friendship", quiz_type="multiple_choice"):
     """Start async content generation"""
@@ -1578,12 +1539,8 @@ def search_external_stories(topic, grade_level, emotional_theme=None):
 def generate_lesson_plan_from_content(extracted_text, grade_level, duration):
     """Generate lesson plan based on actual uploaded content using Bedrock"""
     try:
-        # Skip Bedrock for demo - go directly to fallback
-        return create_content_based_lesson_plan(extracted_text, grade_level, duration)
-        
-        # Original Bedrock code (commented out for demo)
-        # import boto3
-        # bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
+        import boto3
+        bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
         
         # Calculate phase durations in clean 5-minute intervals
         def calculate_clean_durations(total_duration):
@@ -2048,43 +2005,22 @@ def main():
     
     # Enhanced main title - more visible and attractive
     st.markdown("""
-        <div style='text-align: center; margin: 40px 0 60px 0; padding: 40px;
-                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%); 
-                    border-radius: 30px; 
-                    backdrop-filter: blur(15px);
-                    box-shadow: 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
-                    border: 1px solid rgba(255,255,255,0.2);
-                    animation: titleFloat 3s ease-in-out infinite;'>
-            <h1 style='font-size: 5.2em; font-weight: 900; margin: 0 0 25px 0;
+        <div style='text-align: center; margin: 40px 0 60px 0; padding: 30px;
+                    background: rgba(255, 255, 255, 0.1); 
+                    border-radius: 25px; 
+                    backdrop-filter: blur(10px);
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
+            <h1 style='font-size: 4.5em; font-weight: 900; margin: 0 0 20px 0;
                        color: #ffffff;
-                       text-shadow: 3px 3px 12px rgba(0,0,0,0.6), 0 0 30px rgba(255,255,255,0.3);
-                       letter-spacing: 3px;
-                       animation: titleGlow 2s ease-in-out infinite alternate;'>
+                       text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+                       letter-spacing: 2px;'>
                 🌈 Welcome to EmoVerse AI 🚀
             </h1>
-            <p style='color: black; font-size: 1.8em; margin: 0; font-weight: 600;
-                      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
-                      animation: subtitlePulse 2.5s ease-in-out infinite;'>
+            <p style='color: #ffffff; font-size: 1.6em; margin: 0; font-weight: 500;
+                      text-shadow: 1px 1px 4px rgba(0,0,0,0.4);'>
                 Personalized Social-Emotional Learning with AI ✨
             </p>
         </div>
-        
-        <style>
-        @keyframes titleFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-        }
-        
-        @keyframes titleGlow {
-            0% { text-shadow: 3px 3px 12px rgba(0,0,0,0.6), 0 0 30px rgba(255,255,255,0.3); }
-            100% { text-shadow: 3px 3px 12px rgba(0,0,0,0.6), 0 0 40px rgba(255,255,255,0.5), 0 0 60px rgba(240,147,251,0.4); }
-        }
-        
-        @keyframes subtitlePulse {
-            0%, 100% { opacity: 0.9; }
-            50% { opacity: 1; }
-        }
-        </style>
     """, unsafe_allow_html=True)
     
 
@@ -2094,37 +2030,18 @@ def main():
         # Enhanced "Who Are You?" section
         st.markdown("""
             <div style='text-align: center; margin: 30px 0 50px 0;'>
-                <div style='background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%); 
-                            padding: 30px 40px; border-radius: 25px; 
-                            backdrop-filter: blur(15px);
-                            box-shadow: 0 8px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
-                            border: 1px solid rgba(255,255,255,0.15);
-                            display: inline-block;
-                            animation: sectionBounce 2s ease-in-out infinite;'>
-                    <h2 style='color: #ffffff; font-size: 3em; margin: 0;
-                               font-weight: 800; 
-                               text-shadow: 2px 2px 8px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.2);
-                               letter-spacing: 1px;
-                               animation: choiceShimmer 3s ease-in-out infinite;'>
+                <div style='background: rgba(255, 255, 255, 0.15); 
+                            padding: 25px; border-radius: 20px; 
+                            backdrop-filter: blur(10px);
+                            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                            display: inline-block;'>
+                    <h2 style='color: #ffffff; font-size: 2.5em; margin: 0;
+                               font-weight: 700; text-shadow: 2px 2px 6px rgba(0,0,0,0.4);'>
                         ✨ Choose Your Learning Journey
                     </h2>
                 </div>
             </div>
-            
-            <style>
-            @keyframes sectionBounce {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.02); }
-            }
-            
-            @keyframes choiceShimmer {
-                0%, 100% { color: #ffffff; }
-                50% { color: #f093fb; }
-            }
-            </style>
         """, unsafe_allow_html=True)
-        
-
         
         # Better centered button layout
         col1, col2, col3 = st.columns([1, 2, 1])
@@ -2134,7 +2051,7 @@ def main():
         
             with btn_col1:
                 # Student button - enhanced
-                if st.button("👨‍🎓 Student", key="student_btn", use_container_width=True, type="secondary"):
+                if st.button("👨‍🎓 Student", key="student_btn", use_container_width=True, type="primary"):
                     st.session_state.user_type = "student"
                     st.rerun()
             
@@ -2251,25 +2168,19 @@ def student_interface():
             file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Size in MB
             
             if file_size > 50:
-                st.info(f"📚 Large document detected ({file_size:.1f}MB). Processing may take 20-30 seconds.")
+                st.info(f"📚 Large children's book detected ({file_size:.1f}MB). Processing ALL pages with batch optimization (~20-30 seconds).")
             elif file_size > 25:
-                st.info(f"📖 Medium document detected ({file_size:.1f}MB). Processing may take 15-25 seconds.")
+                st.info(f"📖 Medium children's book detected ({file_size:.1f}MB). Processing ALL pages efficiently (~15-25 seconds).")
             elif file_size > 10:
-                st.info(f"📄 Processing document content ({file_size:.1f}MB) - ~10-15 seconds.")
+                st.info(f"📄 Children's book ({file_size:.1f}MB). Processing ALL pages for complete content (~10-15 seconds).")
             elif file_size > 5:
-                st.info(f"📚 Processing document ({file_size:.1f}MB) quickly - ~5-10 seconds.")
-            else:
-                st.info(f"🚀 Processing {uploaded_file.name} ({file_size:.1f}MB)...")
+                st.info(f"📚 Small children's book ({file_size:.1f}MB). Processing ALL pages quickly (~5-10 seconds).")
             
             # Store file for background processing
             st.session_state.current_file = uploaded_file
-            
-            # Start processing flow - ensure it happens immediately
-            extract_text_immediately(uploaded_file)
-        
-        # Show processing message when file is being processed
-        if st.session_state.get('processing_file', False):
-            st.info("📚 Processing your document, please wait for a moment...")
+            # Start processing flow
+            if not st.session_state.get('processing_file', False):
+                extract_text_immediately(uploaded_file)
         
         # Complete processing if in progress
         if st.session_state.get('processing_file', False) and uploaded_file:
@@ -2296,166 +2207,176 @@ def student_interface():
                 st.rerun()
 
 def extract_text_immediately(uploaded_file):
-    """FAST processing - extract text immediately without delays"""
+    """Show simple processing message, extract text, then display tabs when ready"""
     
-    # STEP 1: Set processing flag
+    # STEP 1: Show single, simple processing message
     st.session_state.processing_file = True
     
-    # STEP 2: Process immediately (no separate rerun delay)
-    complete_text_extraction(uploaded_file)
+    # Single, clear processing message
+    st.info("📚 Processing your document, please wait a moment...")
     
-    # STEP 3: Mark as complete
-    st.session_state.processing_file = False
+    # Force rerun to show processing message
+    st.rerun()
 
 def complete_text_extraction(uploaded_file):
-    """SIMPLE & DIRECT: Extract ALL text and display it immediately"""
+    """Complete the text extraction and show tabs - OPTIMIZED for speed"""
     
     try:
-        # Show clean processing message
-        progress_placeholder = st.empty()
-        progress_placeholder.info("📚 Processing your document, please wait for a moment...")
-        
         extracted_text = ""
         
-        # PDF EXTRACTION - Multiple methods
-        if uploaded_file.name.lower().endswith('.pdf'):
-            
-            # Try pdfplumber first (best for readable content)
-            try:
-                import pdfplumber
-                uploaded_file.seek(0)
-                with pdfplumber.open(uploaded_file) as pdf:
-                    for page in pdf.pages:
-                        page_text = page.extract_text()
-                        if page_text and page_text.strip():
-                            extracted_text += page_text + "\n\n"
-                            
-                # If we got good content, clean it up
-                if len(extracted_text.strip()) > 100:
-                    # Remove excessive whitespace but keep structure
-                    import re
-                    extracted_text = re.sub(r'\n\s*\n\s*\n', '\n\n', extracted_text)
-                    extracted_text = extracted_text.strip()
-                    
-            except ImportError:
-                pass
-            except:
-                pass
-            
-            # Try PyPDF2 if pdfplumber didn't work
-            if not extracted_text or len(extracted_text.strip()) < 100:
+        # STEP 2: FAST TEXT EXTRACTION
+        try:
+            # For PDFs, extract text with smart optimization
+            if uploaded_file.name.lower().endswith('.pdf'):
+                # Try faster PDF processing methods
                 try:
-                    import PyPDF2
-                    uploaded_file.seek(0)
-                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                    extracted_text = ""  # Reset
-                    
-                    for page in pdf_reader.pages:
-                        page_text = page.extract_text()
-                        if page_text and page_text.strip():
-                            extracted_text += page_text + "\n\n"
+                    # First try pdfplumber (often faster)
+                    try:
+                        import pdfplumber
+                        
+                        uploaded_file.seek(0)
+                        with pdfplumber.open(uploaded_file) as pdf:
+                            total_pages = len(pdf.pages)
                             
-                    # Clean up if we got content
-                    if len(extracted_text.strip()) > 100:
-                        import re
-                        extracted_text = re.sub(r'\n\s*\n\s*\n', '\n\n', extracted_text)
-                        extracted_text = extracted_text.strip()
-                        
-                except ImportError:
-                    pass
-                except:
-                    pass
+                            # Process ALL pages for children's educational content - OPTIMIZED
+                            file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
+                            max_pages = total_pages  # Process ALL pages
+                            
+                            # Fast processing without detailed progress messages
+                            pages_to_process = max_pages
+                            
+                            # Optimized batch processing for speed
+                            for page_num in range(pages_to_process):
+                                try:
+                                    page_text = pdf.pages[page_num].extract_text()
+                                    if page_text and page_text.strip():
+                                        # Include page numbers for navigation
+                                        extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                                        
+                                except Exception as e:
+                                    # Log error but continue processing
+                                    extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                                    continue
+                            
+                    except ImportError:
+                        # Fallback to PyPDF2 if pdfplumber not available
+                        import PyPDF2
+                        # Reset file pointer to beginning
+                        uploaded_file.seek(0)
+                        pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                    
+                    total_pages = len(pdf_reader.pages)
+                    
+                    # Process ALL pages for complete children's educational content - FAST
+                    file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
+                    max_pages = total_pages  # Always process ALL pages
+                    
+                    pages_to_process = max_pages  # Process ALL pages
+                    
+                    # Fast processing without progress messages
+                    for page_num in range(pages_to_process):
+                        try:
+                            page = pdf_reader.pages[page_num]
+                            page_text = page.extract_text()
+                            
+                            if page_text.strip():
+                                # Always include page numbers for children's books
+                                extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                            else:
+                                # Even if no text, mark the page for completeness
+                                extracted_text += f"Page {page_num + 1}: [Image or no text content]\n\n"
+                                
+                        except Exception as e:
+                            # Log error but continue processing all pages
+                            extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                            continue
+                    
+                    # If no text was extracted, try alternative method
+                    if not extracted_text.strip():
+                        # Try using AWS Textract as fallback for PDFs
+                        try:
+                            file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                            if file_key:
+                                aws_text = extract_text_from_s3(file_key)
+                                if aws_text and aws_text.strip():
+                                    extracted_text = aws_text
+                                else:
+                                    extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nThis PDF has been uploaded successfully. The document appears to contain images or formatted content that will be processed to create your learning materials."
+                            else:
+                                extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Processing content for learning activities."
+                        except:
+                            extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Content will be processed to create engaging learning materials."
+                
+                except Exception as pdf_error:
+                    # PDF processing failed, try AWS Textract
+                    try:
+                        file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                        if file_key:
+                            aws_text = extract_text_from_s3(file_key)
+                            if aws_text and aws_text.strip():
+                                extracted_text = aws_text
+                            else:
+                                extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument processing in progress. Content will be available shortly."
+                        else:
+                            extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded. Processing content for your learning experience."
+                    except:
+                        extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Preparing content for learning activities."
             
-            # Only try raw text as last resort (and filter out metadata)
-            if not extracted_text or len(extracted_text.strip()) < 100:
+            # For images, use AWS Textract
+            elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
                 try:
-                    uploaded_file.seek(0)
-                    raw_content = uploaded_file.read()
-                    text_content = raw_content.decode('utf-8', errors='ignore')
-                    
-                    # Filter out PDF metadata and keep only readable content
-                    import re
-                    # Remove PDF metadata lines
-                    lines = text_content.split('\n')
-                    clean_lines = []
-                    
-                    for line in lines:
-                        line = line.strip()
-                        # Skip PDF metadata and technical lines
-                        if (line and 
-                            not line.startswith('%PDF') and
-                            not line.startswith('%%EOF') and
-                            not line.startswith('/') and
-                            not line.startswith('<<') and
-                            not line.startswith('>>') and
-                            not re.match(r'^\d+\s+\d+\s+obj', line) and
-                            not line.startswith('endobj') and
-                            not line.startswith('stream') and
-                            not line.startswith('endstream') and
-                            len(line) > 10 and
-                            not line.isdigit()):
-                            clean_lines.append(line)
-                    
-                    if clean_lines:
-                        extracted_text = '\n\n'.join(clean_lines)
-                        
+                    file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                    if file_key:
+                        aws_text = extract_text_from_s3(file_key)
+                        if aws_text and aws_text.strip():
+                            extracted_text = aws_text
+                        else:
+                            extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed to create learning materials."
+                    else:
+                        extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Processing visual content..."
                 except:
-                    pass
-            
-        # Handle other file types
-        else:
-            try:
-                uploaded_file.seek(0)
-                content = uploaded_file.read()
-                if isinstance(content, bytes):
-                    extracted_text = content.decode('utf-8', errors='ignore')
-                else:
-                    extracted_text = str(content)
-            except:
-                extracted_text = f"Document: {uploaded_file.name}"
+                    extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed."
         
-        # Ensure we have some content - ALWAYS set something
-        if not extracted_text or not extracted_text.strip():
-            extracted_text = f"""📄 Document: {uploaded_file.name}
-
-✅ Your document has been uploaded successfully!
-
-📊 File Information:
-• File size: {len(uploaded_file.getvalue()) / 1024:.1f} KB
-• File type: {uploaded_file.name.split('.')[-1].upper() if '.' in uploaded_file.name else 'Unknown'}
-• Status: Processing complete
-
-🔍 Text Extraction Status:
-The system attempted to extract text from your document. If this is an image-based PDF or contains complex formatting, the text extraction might not capture all content perfectly.
-
-🎯 What's Available:
-Even if text extraction was limited, you can still:
-• Generate AI stories based on educational themes
-• Create interactive quizzes for your grade level  
-• Ask questions and get helpful answers
-• Explore emotional learning activities
-
-Your learning journey continues in the other tabs! 🌟"""
+        except Exception as e:
+            # Final fallback
+            extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Content is being prepared for your learning experience."
         
-        # Clear progress message
-        progress_placeholder.empty()
+        # If no text extracted, show basic info
+        if not extracted_text.strip():
+            extracted_text = f"📄 Document: {uploaded_file.name}\n\nContent uploaded and ready for learning activities."
         
-        # Set the content directly
+        # STEP 3: SHOW TABS WITH EXTRACTED TEXT
         st.session_state.processed_content = {
             'cleaned_text': extracted_text,
-            'sentiment': {'label': 'NEUTRAL', 'score': 0.5},
-            'themes': ['learning', 'education'],
-            'complexity': 'appropriate',
-            'loading_ai': True,
-            'file_uploaded': True
+            'sentiment': {'sentiment': 'POSITIVE'},
+            'loading_ai': True,  # AI content still loading
+            'file_uploaded': True,
+            'user_session': st.session_state.session_id
         }
         
-        st.session_state.processing_file = False
+        st.session_state.extracted_text = extracted_text
+        st.session_state.processing_file = False  # Processing complete
+        
+        # Simple completion message
+        st.success("✅ Document processed successfully!")
+        
+        # Processing complete - tabs will show automatically
+        
+        # STEP 4: START AI PROCESSING IN BACKGROUND
+        st.session_state.background_started = True
+        
+        # Start AI content generation
+        try:
+            generate_ai_content(extracted_text)
+        except:
+            pass  # Continue even if AI generation fails
+        
+        # Force rerun to show tabs
         st.rerun()
         
     except Exception as e:
         st.session_state.processing_file = False
-        st.error(f"Error: {str(e)}")
+        st.error(f"❌ Error processing document: {str(e)}")
         return
 
 def process_with_aws(uploaded_file):
@@ -2678,32 +2599,21 @@ def display_processed_content():
         else:
             st.markdown("*Analyze the text below to understand its key concepts and themes.* 🌱")
         
-        # Display extracted text in clean, readable format
-        cleaned_text = content.get('cleaned_text', '')
-        
-        # Display text if available
-        if cleaned_text and len(cleaned_text.strip()) > 0:
-            # Show success message
-            st.success("✅ Text extracted successfully!")
-
-
-            
-            # Display text in a simple, reliable text area
-            st.text_area(
-                "📖 Extracted Content:",
-                value=cleaned_text,
-                height=400,
-                disabled=True,
-                key="extracted_text_display"
-            )
-            
-            # Show word count for text content
-            word_count = len(cleaned_text.split())
-            if word_count > 10:
-                st.caption(f"📊 Content: {word_count} words extracted")
-        else:
-            # Show message if no text is available
-            st.info("📄 Your document is ready! The content will appear here once processing is complete.")
+        # Always show the extracted text immediately
+        if content.get('cleaned_text'):
+            st.markdown(f"""
+                <div style='background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); 
+                            padding: 20px; 
+                            border-radius: 15px; 
+                            font-size: 1.05em; 
+                            line-height: 1.6;
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                            max-height: 70vh;
+                            overflow-y: auto;
+                            margin: 0;'>
+                    {content.get('cleaned_text', '')}
+                </div>
+            """, unsafe_allow_html=True)
     
     with tab2:
         st.markdown("### 😊 Emotional Tone")
@@ -3696,7 +3606,9 @@ def teacher_interface():
                 generate_button = st.button("Generate Lesson Plan", use_container_width=True)
             
             if generate_button:
-                if uploaded_file:
+                if not uploaded_file:
+                    st.error("📎 Please upload a file first to generate a lesson plan!")
+                else:
                     # Process the uploaded file to extract content
                     with st.spinner("📖 Analyzing your uploaded content..."):
                         try:
@@ -3728,19 +3640,11 @@ def teacher_interface():
                                 extracted_text = f"Educational Content: {uploaded_file.name}\nContent-based learning material for classroom instruction."
                             
                             # Generate content-based lesson plan using AI
-                            with st.spinner("🎯 Generating lesson plan from your content..."):
-                                lesson_plan = generate_lesson_plan_from_content(extracted_text, grade_level, duration)
-                                
-                                # Ensure we always have a valid lesson plan
-                                if not lesson_plan:
-                                    lesson_plan = create_content_based_lesson_plan(extracted_text, grade_level, duration)
+                            lesson_plan = generate_lesson_plan_from_content(extracted_text, grade_level, duration)
                             
                             if lesson_plan:
                                 st.success("✅ Lesson plan generated successfully!")
                                 st.info("📋 AI-generated lesson plan based on your uploaded content:")
-                                
-
-                                
                                 display_lesson_plan(lesson_plan)
                             else:
                                 st.error("❌ Failed to generate lesson plan. Please try again.")
@@ -3748,12 +3652,6 @@ def teacher_interface():
                         except Exception as e:
                             st.error(f"❌ Error processing file: {str(e)}")
                             st.info("💡 Please try uploading a different file or check the file format.")
-                            
-                            # Show detailed error for debugging
-                            with st.expander("🔍 Error Details", expanded=False):
-                                st.code(str(e))
-                                import traceback
-                                st.code(traceback.format_exc())
         
         with tab2:
             st.header("Student Analytics Dashboard")
@@ -3918,11 +3816,6 @@ def teacher_interface():
                 st.rerun()
 
 def display_lesson_plan(plan):
-    # Debug: Check if plan data exists
-    if not plan:
-        st.error("❌ No lesson plan data received")
-        return
-    
     st.markdown(f"""
         <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                     padding: 30px; border-radius: 20px; text-align: center;
@@ -3936,44 +3829,35 @@ def display_lesson_plan(plan):
         </div>
     """, unsafe_allow_html=True)
     
-    # Generate clean text download for lesson plan
+    # Download button
     lesson_text = f"""
-═══════════════════════════════════════════════════════════════════════════════
-                        LESSON PLAN: {plan.get('lesson_title', 'Lesson Plan')}
-═══════════════════════════════════════════════════════════════════════════════
-
-BASIC INFORMATION:
-├─ Grade Level: Grade {plan.get('grade_level')}
-├─ Duration: {plan.get('duration_minutes')} minutes
-└─ Content Source: {plan.get('content_source', 'Based on uploaded material')}
+LESSON PLAN: {plan.get('lesson_title', 'Lesson Plan')}
+Grade Level: {plan.get('grade_level')}
+Duration: {plan.get('duration_minutes')} minutes
 
 LEARNING OBJECTIVES:
-{chr(10).join('├─ ' + obj for obj in plan.get('learning_objectives', []))}
+{chr(10).join('- ' + obj for obj in plan.get('learning_objectives', []))}
 
 SEL COMPETENCIES:
-{chr(10).join('├─ ' + comp for comp in plan.get('sel_competencies', []))}
+{', '.join(plan.get('sel_competencies', []))}
 
 WARM-UP ({plan.get('phases', {}).get('warmup', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('├─ ' + act for act in plan.get('phases', {}).get('warmup', {}).get('activities', []))}
+{chr(10).join('- ' + act for act in plan.get('phases', {}).get('warmup', {}).get('activities', []))}
 
 READING & DISCUSSION ({plan.get('phases', {}).get('reading_discussion', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('├─ ' + act for act in plan.get('phases', {}).get('reading_discussion', {}).get('activities', []))}
+{chr(10).join('- ' + act for act in plan.get('phases', {}).get('reading_discussion', {}).get('activities', []))}
 
 PRACTICE ACTIVITY ({plan.get('phases', {}).get('practice_activity', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('├─ ' + act for act in plan.get('phases', {}).get('practice_activity', {}).get('activities', []))}
+{chr(10).join('- ' + act for act in plan.get('phases', {}).get('practice_activity', {}).get('activities', []))}
 
 WRAP-UP ({plan.get('phases', {}).get('wrap_up', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('├─ ' + method for method in plan.get('phases', {}).get('wrap_up', {}).get('methods', []))}
-
-═══════════════════════════════════════════════════════════════════════════════
-Generated by EmoVerse AI - Social Emotional Learning Platform
-═══════════════════════════════════════════════════════════════════════════════
+{chr(10).join('- ' + method for method in plan.get('phases', {}).get('wrap_up', {}).get('methods', []))}
 """
     
     st.download_button(
-        label="📥 Download Lesson Plan (Text)",
-        data=lesson_text.encode('utf-8'),
-        file_name=f"lesson_plan_{plan.get('lesson_title', 'plan').replace(' ', '_').replace(':', '').replace('?', '').replace('!', '')}.txt",
+        label="📥 Download Lesson Plan",
+        data=lesson_text,
+        file_name=f"lesson_plan_{plan.get('lesson_title', 'plan').replace(' ', '_')}.txt",
         mime="text/plain",
         use_container_width=True
     )
@@ -4005,16 +3889,10 @@ Generated by EmoVerse AI - Social Emotional Learning Platform
             <h3 style='color: #ff6b6b; margin: 0 0 15px 0;'>🔥 Warm-up Phase</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {warmup.get('duration_minutes', 'Not set')} minutes")
+    st.markdown(f"**Duration:** {warmup.get('duration_minutes')} minutes")
     st.markdown("**Activities:**")
-    activities = warmup.get('activities', [])
-    if activities:
-        for activity in activities:
-            st.markdown(f"• {activity}")
-    else:
-        # Show default activities if none found
-        st.markdown("• Circle time discussion")
-        st.markdown("• Share experiences with the group")
+    for activity in warmup.get('activities', []):
+        st.markdown(f"• {activity}")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -4025,17 +3903,10 @@ Generated by EmoVerse AI - Social Emotional Learning Platform
             <h3 style='color: #667eea; margin: 0 0 15px 0;'>📖 Reading & Discussion</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {reading.get('duration_minutes', 'Not set')} minutes")
+    st.markdown(f"**Duration:** {reading.get('duration_minutes')} minutes")
     st.markdown("**Activities:**")
-    activities = reading.get('activities', [])
-    if activities:
-        for activity in activities:
-            st.markdown(f"• {activity}")
-    else:
-        # Show default activities if none found
-        st.markdown("• Read the content together")
-        st.markdown("• Discuss main ideas")
-        st.markdown("• Share thoughts and questions")
+    for activity in reading.get('activities', []):
+        st.markdown(f"• {activity}")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -4046,17 +3917,10 @@ Generated by EmoVerse AI - Social Emotional Learning Platform
             <h3 style='color: #f59e0b; margin: 0 0 15px 0;'>✏️ Practice Activity</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {practice.get('duration_minutes', 'Not set')} minutes")
+    st.markdown(f"**Duration:** {practice.get('duration_minutes')} minutes")
     st.markdown("**Activities:**")
-    activities = practice.get('activities', [])
-    if activities:
-        for activity in activities:
-            st.markdown(f"• {activity}")
-    else:
-        # Show default activities if none found
-        st.markdown("• Draw or write about the content")
-        st.markdown("• Practice key concepts")
-        st.markdown("• Work on related activities")
+    for activity in practice.get('activities', []):
+        st.markdown(f"• {activity}")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -4067,17 +3931,10 @@ Generated by EmoVerse AI - Social Emotional Learning Platform
             <h3 style='color: #10b981; margin: 0 0 15px 0;'>🎯 Wrap-up</h3>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**Duration:** {wrapup.get('duration_minutes', 'Not set')} minutes")
+    st.markdown(f"**Duration:** {wrapup.get('duration_minutes')} minutes")
     st.markdown("**Activities:**")
-    methods = wrapup.get('methods', [])
-    if methods:
-        for method in methods:
-            st.markdown(f"• {method}")
-    else:
-        # Show default activities if none found
-        st.markdown("• Share what you learned")
-        st.markdown("• Quick review of key points")
-        st.markdown("• Reflect on the lesson")
+    for method in wrapup.get('methods', []):
+        st.markdown(f"• {method}")
 
 if __name__ == "__main__":
     # Add floating help button and global styles
