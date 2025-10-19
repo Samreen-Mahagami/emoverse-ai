@@ -164,22 +164,7 @@ st.markdown("""
         padding: 12px !important;
     }
     
-    /* Voice button styling - small and integrated */
-    .stButton > button[title*="Voice" i] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        border: none !important;
-        font-size: 1.2em !important;
-        padding: 8px 12px !important;
-        min-height: 45px !important;
-        border-radius: 8px !important;
-        width: 100% !important;
-    }
-    
-    .stButton > button[title*="Voice" i]:hover {
-        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
-        transform: scale(1.05) !important;
-    }
+
     
     /* Special styling for main page Student/Teacher buttons */
     .stButton > button[key*="student_btn" i], 
@@ -1003,107 +988,9 @@ def generate_demo_answer(question, grade_level):
         else:
             return f"Excellent question! This connects to the core principles of social-emotional learning. The key is to reflect on how these concepts apply to your own life and relationships. Critical thinking about these topics helps us develop better self-awareness and interpersonal skills."
 
-def record_audio_streamlit():
-    """Record audio using Streamlit's audio_recorder component"""
-    try:
-        # Use streamlit-audio-recorder if available
-        try:
-            from audio_recorder_streamlit import audio_recorder
-            
-            # Record audio
-            audio_bytes = audio_recorder(
-                text="Click to record your question",
-                recording_color="#e8b62c",
-                neutral_color="#6aa36f",
-                icon_name="microphone",
-                icon_size="2x",
-                pause_threshold=2.0,
-                sample_rate=16000
-            )
-            
-            return audio_bytes
-            
-        except ImportError:
-            # Fallback: Use HTML5 audio recording
-            st.warning("🎤 Audio recorder not available. Please install streamlit-audio-recorder for voice input.")
-            return None
-            
-    except Exception as e:
-        st.error(f"Recording error: {str(e)}")
-        return None
 
-def transcribe_audio_aws(audio_bytes):
-    """Transcribe audio using AWS Transcribe"""
-    try:
-        if not audio_bytes:
-            return None
-            
-        # Create unique job name
-        job_name = f"voice-qa-{uuid.uuid4().hex[:8]}"
-        audio_key = f"sel-input/audio_questions/{job_name}.wav"
-        
-        # Upload audio to S3
-        s3_client.put_object(
-            Bucket=S3_BUCKET,
-            Key=audio_key,
-            Body=audio_bytes
-        )
-        
-        # Start transcription job
-        transcribe_client = boto3.client('transcribe', region_name=AWS_REGION)
-        transcribe_client.start_transcription_job(
-            TranscriptionJobName=job_name,
-            Media={'MediaFileUri': f"s3://{S3_BUCKET}/{audio_key}"},
-            MediaFormat='wav',
-            LanguageCode='en-US'
-        )
-        
-        # Poll for completion with progress indicator
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        for attempt in range(20):  # Max 60 seconds
-            status = transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
-            job_status = status['TranscriptionJob']['TranscriptionJobStatus']
-            
-            progress_bar.progress((attempt + 1) / 20)
-            status_text.text(f"🎤 Transcribing your question... ({attempt + 1}/20)")
-            
-            if job_status == 'COMPLETED':
-                # Get transcript
-                transcript_uri = status['TranscriptionJob']['Transcript']['TranscriptFileUri']
-                import urllib.request
-                with urllib.request.urlopen(transcript_uri) as response:
-                    transcript_data = json.loads(response.read())
-                    transcribed_text = transcript_data['results']['transcripts'][0]['transcript']
-                    
-                    # Clean up
-                    progress_bar.empty()
-                    status_text.empty()
-                    
-                    return transcribed_text
-                    
-            elif job_status == 'FAILED':
-                progress_bar.empty()
-                status_text.empty()
-                st.error("❌ Transcription failed. Please try again or type your question.")
-                return None
-            
-            time_module.sleep(3)
-        
-        # Timeout
-        progress_bar.empty()
-        status_text.empty()
-        st.warning("⏰ Transcription taking longer than expected. Please try typing your question.")
-        return None
-            
-    except Exception as e:
-        st.error(f"Voice transcription error: {str(e)}")
-        return None
 
-def process_voice_question(audio_bytes, context_text, grade_level):
-    """Process voice question using AWS Transcribe - Legacy function for compatibility"""
-    return transcribe_audio_aws(audio_bytes)
+
 
 def create_content_specific_quiz(text, grade_level):
     """Create quiz questions based on actual document content and grade level"""
@@ -2808,137 +2695,21 @@ def display_processed_content():
         # Question input with voice recording
         st.markdown("### 💭 Ask Your Question")
         
-        # Initialize voice recording state
-        if 'recording_mode' not in st.session_state:
-            st.session_state.recording_mode = False
-        if 'transcribed_question' not in st.session_state:
-            st.session_state.transcribed_question = ""
+
         
-        # Voice recording section
-        col1, col2 = st.columns([5, 1])
+        # Question input section
+        question = st.text_input(
+            "Type your question here:",
+            placeholder="What is friendship? What did you learn from this story?",
+            help="Type your question about the content",
+            key="question_input"
+        )
         
-        with col1:
-            # Text input for question
-            question = st.text_input(
-                "Type your question here:",
-                value=st.session_state.get('transcribed_question', ''),
-                placeholder="What is friendship? or click the microphone to speak...",
-                help="Type your question or use the microphone to speak",
-                key="question_input"
-            )
-        
-        with col2:
-            st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-            
-            # Voice recording button
-            if st.button("🎤", help="Click to record your voice question", key="voice_record_btn", use_container_width=True):
-                st.session_state.recording_mode = True
-                st.rerun()
-        
-        # Voice recording interface
-        if st.session_state.recording_mode:
-            st.markdown("---")
-            st.markdown("### 🎤 Voice Recording")
-            
-            # Try to use audio recorder
-            try:
-                from audio_recorder_streamlit import audio_recorder
-                
-                st.info("🎤 Click the microphone below to start recording your question!")
-                
-                audio_bytes = audio_recorder(
-                    text="Record your question",
-                    recording_color="#e74c3c",
-                    neutral_color="#667eea",
-                    icon_name="microphone",
-                    icon_size="2x",
-                    pause_threshold=2.0,
-                    sample_rate=16000,
-                    key="audio_recorder"
-                )
-                
-                if audio_bytes:
-                    st.success("🎵 Audio recorded! Transcribing...")
-                    
-                    # Transcribe the audio
-                    transcribed_text = transcribe_audio_aws(audio_bytes)
-                    
-                    if transcribed_text:
-                        st.success(f"✅ Transcribed: '{transcribed_text}'")
-                        st.session_state.transcribed_question = transcribed_text
-                        st.session_state.question_input = transcribed_text
-                        st.session_state.recording_mode = False
-                        st.rerun()
-                    else:
-                        st.error("❌ Could not transcribe audio. Please try again or type your question.")
-                
-                # Cancel recording button
-                if st.button("❌ Cancel Recording", key="cancel_recording"):
-                    st.session_state.recording_mode = False
-                    st.rerun()
-                    
-            except ImportError:
-                st.warning("📦 Audio recorder not installed. Using fallback method...")
-                
-                # Fallback: File upload for audio
-                st.info("🎤 Please upload an audio file with your question:")
-                uploaded_audio = st.file_uploader(
-                    "Upload audio file",
-                    type=['wav', 'mp3', 'm4a'],
-                    help="Upload a short audio file with your question"
-                )
-                
-                if uploaded_audio:
-                    st.success("🎵 Audio uploaded! Transcribing...")
-                    
-                    # Convert to bytes and transcribe
-                    audio_bytes = uploaded_audio.read()
-                    transcribed_text = transcribe_audio_aws(audio_bytes)
-                    
-                    if transcribed_text:
-                        st.success(f"✅ Transcribed: '{transcribed_text}'")
-                        st.session_state.transcribed_question = transcribed_text
-                        st.session_state.question_input = transcribed_text
-                        st.session_state.recording_mode = False
-                        st.rerun()
-                    else:
-                        st.error("❌ Could not transcribe audio. Please try again or type your question.")
-                
-                # Demo voice questions for fallback
-                st.markdown("**Or try these sample voice questions:**")
-                demo_questions = [
-                    "What is the main idea of this text?",
-                    "How can I apply this in my daily life?", 
-                    "What does this story teach us about emotions?",
-                    "Why is empathy important?",
-                    "Can you explain this concept in simple words?"
-                ]
-                
-                for i, demo_q in enumerate(demo_questions):
-                    if st.button(f"🎤 '{demo_q}'", key=f"demo_voice_{i}"):
-                        st.session_state.transcribed_question = demo_q
-                        st.session_state.question_input = demo_q
-                        st.session_state.recording_mode = False
-                        st.rerun()
-                
-                # Cancel button for fallback
-                if st.button("❌ Cancel", key="cancel_upload"):
-                    st.session_state.recording_mode = False
-                    st.rerun()
-            
-            except Exception as e:
-                st.error(f"Voice recording error: {str(e)}")
-                st.info("Please type your question instead.")
-                
-                if st.button("❌ Close Voice Input", key="close_voice"):
-                    st.session_state.recording_mode = False
-                    st.rerun()
-        
-        # Enhanced Get Answer button
+        # Get Answer button
         st.markdown("---")
         if st.button("🔍 Get My Answer!", use_container_width=True, type="primary", key="get_answer_btn"):
-            # Get question from either text input or transcribed voice
-            current_question = question.strip() if question else st.session_state.get('transcribed_question', '').strip()
+            # Get question from text input
+            current_question = question.strip()
             
             if current_question:
                 # Get context from processed content

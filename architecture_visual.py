@@ -64,7 +64,7 @@ def create_complete_flow_diagram():
     ax.text(10.5, 10.3, '🧠 Bedrock\n(Claude Sonnet)', fontsize=9, ha='center')
     ax.text(13.5, 10.3, '💭 Comprehend\n(Sentiment)', fontsize=9, ha='center')
     ax.text(10.5, 9.7, '📄 Textract\n(OCR)', fontsize=9, ha='center')
-    ax.text(13.5, 9.7, '🎤 Transcribe\n(Voice)', fontsize=9, ha='center')
+    ax.text(13.5, 9.7, '📝 Text Input\n(Q&A)', fontsize=9, ha='center')
     ax.text(12, 9.1, 'Grade-Appropriate Content Generation', fontsize=9, ha='center', style='italic')
     
     # Storage Services
@@ -160,7 +160,7 @@ def create_complete_flow_diagram():
     ax.text(8, 2.7, '⭐ Key Platform Features', fontsize=14, fontweight='bold', ha='center')
     
     features_text = """
-    📚 Multi-Modal Input: PDF, Images, Voice Questions  |  🎯 Grade-Adaptive Content (K-10)  |  🤖 3-Tier AI Agent System
+    📚 Multi-Modal Input: PDF, Images, Text Questions  |  🎯 Grade-Adaptive Content (K-10)  |  🤖 3-Tier AI Agent System
     📊 Real-Time Analytics Dashboard  |  💭 Sentiment-Aware Learning  |  🌐 External Content Discovery
     👥 Multi-User Support with Session Isolation  |  ⚡ Serverless Scalable Architecture  |  🔒 Secure Authentication
     """
