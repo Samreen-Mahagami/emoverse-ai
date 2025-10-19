@@ -1677,7 +1677,35 @@ def generate_lesson_plan_from_content(extracted_text, grade_level, duration):
         
         warmup_time, main_time, extension_time, assessment_time = calculate_clean_durations(duration)
         
-        prompt = f"""Based on this educational content, create a SIMPLE lesson plan for Grade {grade_level} students.
+        # Add randomization to prevent repetitive lesson plans
+        import random
+        import time
+        
+        # Generate variety elements
+        warmup_styles = [
+            "interactive discussion", "movement-based activity", "creative prediction game", 
+            "hands-on exploration", "collaborative sharing", "visual thinking exercise"
+        ]
+        
+        activity_approaches = [
+            "collaborative group work", "individual reflection", "partner discussions", 
+            "creative expression", "hands-on practice", "interactive games"
+        ]
+        
+        assessment_methods = [
+            "verbal sharing", "quick drawings", "thumbs up/down", "exit tickets", 
+            "show and tell", "peer discussions"
+        ]
+        
+        # Random selections for variety
+        selected_warmup_style = random.choice(warmup_styles)
+        selected_activity_approach = random.choice(activity_approaches)
+        selected_assessment = random.choice(assessment_methods)
+        
+        # Add timestamp for uniqueness
+        unique_seed = int(time.time()) % 1000
+        
+        prompt = f"""Based on this educational content, create a UNIQUE and VARIED lesson plan for Grade {grade_level} students.
 
 CONTENT TO ANALYZE:
 {extracted_text[:2000]}
@@ -1687,21 +1715,30 @@ LESSON PLAN REQUIREMENTS:
 - Grade Level: {grade_level}
 - Keep activities SIMPLE and easy to implement
 - Focus on basic reading comprehension and discussion
+- IMPORTANT: Create DIFFERENT activities each time - avoid repetitive "circle time" or standard activities
+
+VARIETY REQUIREMENTS (Seed: {unique_seed}):
+- Warm-up Style: Use {selected_warmup_style} approach
+- Main Activity: Focus on {selected_activity_approach}
+- Assessment: Use {selected_assessment} method
+- Make each lesson plan UNIQUE and engaging
 
 STRUCTURE NEEDED:
-1. Simple lesson title based on the content
-2. 3 basic learning objectives
-3. Four simple phases:
-   - Warm-up ({warmup_time} minutes): Simple opening activities
-   - Reading & Discussion ({main_time} minutes): Read content and discuss
-   - Practice Activity ({extension_time} minutes): Simple hands-on activity
-   - Wrap-up ({assessment_time} minutes): Quick check for understanding
+1. Creative lesson title based on the content (not generic)
+2. 3 specific learning objectives related to the actual content
+3. Four diverse phases:
+   - Warm-up ({warmup_time} minutes): {selected_warmup_style} - NO repetitive circle time
+   - Reading & Discussion ({main_time} minutes): Read content with {selected_activity_approach}
+   - Practice Activity ({extension_time} minutes): Creative hands-on activity
+   - Wrap-up ({assessment_time} minutes): {selected_assessment} for understanding
 
-KEEP IT SIMPLE:
-- Use basic classroom activities (reading, discussion, drawing, sharing)
+KEEP IT SIMPLE BUT VARIED:
+- Use diverse classroom activities (avoid repetition)
+- Create engaging, different warm-ups each time
 - Make activities easy for teachers to implement
 - Focus on comprehension and basic SEL concepts
 - Use simple language appropriate for Grade {grade_level}
+- Ensure activities are DIFFERENT from typical lesson plans
 
 Format as JSON:
 {{
@@ -1833,23 +1870,90 @@ def create_content_based_lesson_plan(extracted_text, grade_level, duration):
     extension_activities = []
     assessment_methods = []
     
+    # Create HIGHLY varied warm-up activities based on content with extensive randomization
+    import random
+    import time
+    
+    # Add time-based seed for extra variety
+    random.seed(int(time.time()) % 10000)
+    
     if 'friendship' in themes:
-        warmup_activities = ['Circle time: What makes a good friend?', 'Share about your best friend']
+        warmup_options = [
+            ['Friendship scavenger hunt: Find someone who...', 'Share friendship qualities with actions'],
+            ['Friendship web: Connect yarn between friends', 'Quick partner introduction with high-fives'],
+            ['Friendship song or friendship chant', 'Show friendship with creative hand gestures'],
+            ['Think-pair-share: Best friend qualities', 'Friendship compliment circle'],
+            ['Friendship charades: Act out being a good friend', 'Friendship handshake creation'],
+            ['Friendship picture walk: Look at friendship images', 'Friendship story predictions'],
+            ['Friendship dance or movement', 'Share friendship memories with drawings'],
+            ['Friendship sorting game: Kind vs. unkind actions', 'Friendship goal setting']
+        ]
+        warmup_activities = random.choice(warmup_options)
         main_activities = ['Read the story together', 'Talk about friendship in the story', 'Discuss: How do friends help each other?']
         extension_activities = ['Draw your favorite friendship moment', 'Practice being a good friend']
         assessment_methods = ['Share one thing you learned about friendship', 'Quick thumbs up/down: Did you like the story?']
+        
     elif 'emotions' in themes:
-        warmup_activities = ['Show how you feel today with your face', 'Name different emotions']
+        warmup_options = [
+            ['Emotion weather report: How is your mood today?', 'Pass the feeling ball around'],
+            ['Emotion dance: Move like different feelings', 'Feeling faces mirror game'],
+            ['Emotion color matching: What color is happy?', 'Emotion sorting with picture cards'],
+            ['Emotion charades: Act out different feelings', 'Feeling check-in with hand signals'],
+            ['Emotion music: Listen and guess the feeling', 'Emotion drawing warm-up'],
+            ['Emotion story starter: Once I felt...', 'Emotion prediction game'],
+            ['Emotion body scan: How do feelings feel in your body?', 'Emotion sharing circle'],
+            ['Emotion thermometer: Rate your feelings', 'Emotion word brainstorm']
+        ]
+        warmup_activities = random.choice(warmup_options)
         main_activities = ['Read the story together', 'Talk about feelings in the story', 'Share: When do you feel happy/sad?']
         extension_activities = ['Draw different emotions', 'Practice showing feelings with faces']
         assessment_methods = ['Share one feeling from the story', 'Show me a happy face/sad face']
+        
     elif 'kindness' in themes:
-        warmup_activities = ['Share one kind thing you did', 'Talk about being kind']
+        warmup_options = [
+            ['Kindness scavenger hunt: Find kind actions', 'Kindness compliment circle'],
+            ['Kindness chain: Add kind acts to paper chain', 'Kind words brainstorm session'],
+            ['Kindness hand gestures and movements', 'Share kindness stories with partners'],
+            ['Kindness vs. unkindness sorting game', 'Kindness goal setting for the day'],
+            ['Kindness picture walk: Look at kind actions', 'Kindness charades: Act out being kind'],
+            ['Kindness song or chant creation', 'Kindness drawing warm-up'],
+            ['Kindness memory sharing: When someone was kind to you', 'Kindness prediction game'],
+            ['Kindness thermometer: How kind can we be?', 'Kindness word association']
+        ]
+        warmup_activities = random.choice(warmup_options)
         main_activities = ['Read the story together', 'Find kind actions in the story', 'Discuss: How can we be kind?']
         extension_activities = ['Draw someone being kind', 'Practice kind words']
         assessment_methods = ['Share one way to be kind', 'Tell about kindness in the story']
+        
+    elif 'learning' in themes:
+        warmup_options = [
+            ['Learning celebration dance or movement', 'Share something amazing you learned'],
+            ['Brain warm-up games: Count, rhyme, or think', 'Show me your best thinking pose'],
+            ['Learning goals: What excites you to learn?', 'Learning subject sharing circle'],
+            ['Growth mindset chant or song', 'Learning high-fives and encouragement'],
+            ['Learning scavenger hunt: Find something new', 'Learning prediction game'],
+            ['Learning memory palace: Remember what you learned', 'Learning charades: Act out subjects'],
+            ['Learning thermometer: How excited are you?', 'Learning word association'],
+            ['Learning story starter: I learned that...', 'Learning drawing warm-up']
+        ]
+        warmup_activities = random.choice(warmup_options)
+        main_activities = ['Read the content together', 'Discuss what we can learn', 'Share: What was interesting?']
+        extension_activities = ['Draw what you learned', 'Teach someone else one new thing']
+        assessment_methods = ['Share one new thing you learned', 'Show learning with actions']
+        
     else:
-        warmup_activities = ['Look at the book cover - what do you see?', 'Guess what the story is about']
+        # General content warm-ups with extensive variety
+        warmup_options = [
+            ['Content cover analysis: What do you notice?', 'Story prediction game with drawings'],
+            ['Picture walk adventure: Explore the pages', 'Content prediction with partner sharing'],
+            ['Title detective work: What clues do you see?', 'Prior knowledge sharing circle'],
+            ['Story starter creativity: Once upon a time...', 'Quick sketch: What comes to mind?'],
+            ['Content preview dance or movement', 'Excitement thermometer for reading'],
+            ['Content scavenger hunt: Find interesting details', 'Content charades: Act out what you see'],
+            ['Content word association game', 'Content memory prediction'],
+            ['Content question brainstorm', 'Content connection to your life']
+        ]
+        warmup_activities = random.choice(warmup_options)
         main_activities = ['Read the story together', 'Talk about what happened', 'Share your favorite part']
         extension_activities = ['Draw your favorite part', 'Act out a scene from the story']
         assessment_methods = ['Tell what the story was about', 'Share what you learned']
