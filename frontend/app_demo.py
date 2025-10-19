@@ -2298,8 +2298,7 @@ def extract_text_immediately(uploaded_file):
 def complete_text_extraction(uploaded_file):
     """SUPER FAST text extraction - optimized for 15-25 second processing"""
     
-    import time
-    star
+    try:
         extracted_text = ""
         file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
         
