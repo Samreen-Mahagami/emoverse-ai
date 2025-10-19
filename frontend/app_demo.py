@@ -2023,7 +2023,7 @@ def main():
                        animation: titleGlow 2s ease-in-out infinite alternate;'>
                 🌈 Welcome to EmoVerse AI 🚀
             </h1>
-            <p style='color: #ffffff; font-size: 1.8em; margin: 0; font-weight: 600;
+            <p style='color: #ffffff; font-size: 2.0em; margin: 0; font-weight: 600;
                       text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
                       animation: subtitlePulse 2.5s ease-in-out infinite;'>
                 Personalized Social-Emotional Learning with AI ✨
@@ -2085,36 +2085,7 @@ def main():
             </style>
         """, unsafe_allow_html=True)
         
-        # Add floating decorative elements
-        st.markdown("""
-            <div style='position: relative; margin: 20px 0;'>
-                <div style='position: absolute; top: -20px; left: 10%; 
-                           font-size: 2em; animation: float1 4s ease-in-out infinite;'>🌟</div>
-                <div style='position: absolute; top: -10px; right: 15%; 
-                           font-size: 1.5em; animation: float2 3s ease-in-out infinite;'>✨</div>
-                <div style='position: absolute; top: 50px; left: 5%; 
-                           font-size: 1.8em; animation: float3 3.5s ease-in-out infinite;'>🎨</div>
-                <div style='position: absolute; top: 40px; right: 8%; 
-                           font-size: 1.6em; animation: float1 2.8s ease-in-out infinite;'>🌈</div>
-            </div>
-            
-            <style>
-            @keyframes float1 {
-                0%, 100% { transform: translateY(0px) rotate(0deg); }
-                50% { transform: translateY(-15px) rotate(10deg); }
-            }
-            
-            @keyframes float2 {
-                0%, 100% { transform: translateY(0px) rotate(0deg); }
-                50% { transform: translateY(-20px) rotate(-10deg); }
-            }
-            
-            @keyframes float3 {
-                0%, 100% { transform: translateY(0px) rotate(0deg); }
-                50% { transform: translateY(-12px) rotate(5deg); }
-            }
-            </style>
-        """, unsafe_allow_html=True)
+
         
         # Better centered button layout
         col1, col2, col3 = st.columns([1, 2, 1])
