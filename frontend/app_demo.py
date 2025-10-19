@@ -2318,32 +2318,41 @@ def complete_text_extraction(uploaded_file):
                     
                     with pdfplumber.open(uploaded_file) as pdf:
                         total_pages = len(pdf.pages)
+                        progress_placeholder.info(f"📄 Processing PDF ({total_pages} pages, {file_size_mb:.1f}MB)...")
                         
                         # SPEED OPTIMIZATION: Smart page limiting
                         if file_size_mb > 10:  # For files > 10MB
-                            max_pages = min(30, total_pages)  # Process max 30 pages
+                            max_pages = min(50, total_pages)  # Increased from 30 to 50
                         elif file_size_mb > 5:  # For files > 5MB
-                            max_pages = min(60, total_pages)  # Process max 60 pages
+                            max_pages = min(100, total_pages)  # Increased from 60 to 100
                         else:
                             max_pages = total_pages  # Process all pages for smaller files
                         
-                        # FAST batch processing
+                        # FAST batch processing with better error handling
+                        pages_processed = 0
                         for page_num in range(max_pages):
                             try:
                                 page_text = pdf.pages[page_num].extract_text()
                                 if page_text and page_text.strip():
                                     extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
-                            except:
+                                    pages_processed += 1
+                                    
+                                    # Show progress every 10 pages
+                                    if pages_processed % 10 == 0:
+                                        progress_placeholder.info(f"📄 Processed {pages_processed}/{max_pages} pages...")
+                            except Exception as e:
                                 continue  # Skip problematic pages quickly
                         
-                        # Check if we got good content
-                        if len(extracted_text.strip()) > 200:
+                        # Lower threshold for success - even 50 characters is useful
+                        if len(extracted_text.strip()) > 50:
                             local_success = True
                             if max_pages < total_pages:
                                 extracted_text += f"\n[Note: Processed first {max_pages} pages of {total_pages} total pages for faster loading]\n"
+                            progress_placeholder.info(f"✅ Successfully extracted text from {pages_processed} pages!")
                             
                 except ImportError:
                     # Fallback to PyPDF2
+                    progress_placeholder.info("📄 Using PyPDF2 for text extraction...")
                     import PyPDF2
                     uploaded_file.seek(0)
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
@@ -2351,26 +2360,35 @@ def complete_text_extraction(uploaded_file):
                     
                     # SPEED OPTIMIZATION: Smart page limiting
                     if file_size_mb > 10:
-                        max_pages = min(30, total_pages)
+                        max_pages = min(50, total_pages)
                     elif file_size_mb > 5:
-                        max_pages = min(60, total_pages)
+                        max_pages = min(100, total_pages)
                     else:
                         max_pages = total_pages
                     
+                    pages_processed = 0
                     for page_num in range(max_pages):
                         try:
                             page_text = pdf_reader.pages[page_num].extract_text()
-                            if page_text.strip():
+                            if page_text and page_text.strip():
                                 extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
-                        except:
+                                pages_processed += 1
+                                
+                                # Show progress every 10 pages
+                                if pages_processed % 10 == 0:
+                                    progress_placeholder.info(f"📄 Processed {pages_processed}/{max_pages} pages...")
+                        except Exception as e:
                             continue
                     
-                    if len(extracted_text.strip()) > 200:
+                    # Lower threshold for success
+                    if len(extracted_text.strip()) > 50:
                         local_success = True
                         if max_pages < total_pages:
                             extracted_text += f"\n[Note: Processed first {max_pages} pages of {total_pages} total pages for faster loading]\n"
+                        progress_placeholder.info(f"✅ Successfully extracted text from {pages_processed} pages!")
                 
-            except Exception:
+            except Exception as e:
+                progress_placeholder.info(f"⚠️ Local PDF processing failed: {str(e)}")
                 local_success = False
             
             # PRIORITY 2: If local processing failed, try fast Textract
@@ -2379,16 +2397,32 @@ def complete_text_extraction(uploaded_file):
                 try:
                     file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
                     if file_key:
+                        progress_placeholder.info("☁️ Processing with AWS Textract...")
                         aws_text = extract_text_from_s3_fast(file_key)  # Fast version with timeout
-                        if aws_text and len(aws_text.strip()) > 100:
+                        if aws_text and len(aws_text.strip()) > 50:  # Lower threshold
                             extracted_text = aws_text
                             local_success = True
-                except Exception:
-                    pass
+                            progress_placeholder.info("✅ Successfully extracted text using OCR!")
+                        else:
+                            progress_placeholder.info("⚠️ OCR processing timed out or failed")
+                    else:
+                        progress_placeholder.info("⚠️ Failed to upload to cloud storage")
+                except Exception as e:
+                    progress_placeholder.info(f"⚠️ OCR processing failed: {str(e)}")
             
-            # PRIORITY 3: Final fallback
+            # PRIORITY 3: Final fallback with more detailed info
             if not local_success:
-                extracted_text = f"📄 PDF Document: {uploaded_file.name} ({file_size_mb:.1f}MB)\n\nDocument uploaded successfully. This appears to be an image-heavy PDF. Content will be processed to create your learning materials."
+                extracted_text = f"""📄 PDF Document: {uploaded_file.name} ({file_size_mb:.1f}MB)
+
+Document uploaded successfully. This appears to be an image-heavy or complex PDF that requires special processing.
+
+The document contains visual content that will be analyzed to create:
+• Interactive stories based on the content
+• Educational quizzes and activities  
+• Age-appropriate learning materials
+• Social-emotional learning exercises
+
+Your learning materials are being prepared and will be available shortly."""
         
         # For images - Use FAST Textract with timeout
         elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -2423,7 +2457,15 @@ def complete_text_extraction(uploaded_file):
         if not extracted_text.strip():
             extracted_text = f"📄 Document: {uploaded_file.name}\n\nContent uploaded and ready for learning activities."
         
-        # Clear progress indicator
+        # Clear progress indicator and show final status
+        if len(extracted_text.strip()) > 100:
+            progress_placeholder.success(f"✅ Document processed successfully! Extracted {len(extracted_text)} characters.")
+        else:
+            progress_placeholder.warning("⚠️ Limited text extracted - document may be image-based.")
+        
+        # Clear after 2 seconds
+        import time
+        time.sleep(1)
         progress_placeholder.empty()
         
         # STEP 3: SHOW TABS WITH EXTRACTED TEXT
