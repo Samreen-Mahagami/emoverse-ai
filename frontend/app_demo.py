@@ -1370,7 +1370,7 @@ def create_content_specific_quiz(text, grade_level):
     ])
     
     # Additional quiz questions for learning theme
-    learning_quiz_questions.extend([
+    questions.extend([
         {
             "question": "Good students always ___ carefully.",
             "type": "fill_blank",
@@ -3404,29 +3404,7 @@ def display_processed_content():
     with tab5:
         grade_level = st.session_state.get('grade_level', 1)
         
-        # Enhanced quiz header - emphasize content-based questions
-        if grade_level <= 3:
-            header_text = "Answer questions about YOUR story! 📚✨"
-        elif grade_level <= 6:
-            header_text = "Test what you learned from YOUR document! 📖🎯"
-        else:
-            header_text = "Demonstrate your understanding of YOUR uploaded content! 📋🧠"
-        
-        st.markdown(f"""
-            <div style='background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); 
-                        padding: 20px; border-radius: 15px; text-align: center;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;'>
-                <div style='font-size: 1.8em; color: #2d3748; font-weight: bold; margin-bottom: 8px;'>
-                    🎯 Content-Based Quiz
-                </div>
-                <div style='font-size: 1.1em; color: #2d3748;'>
-                    {header_text}
-                </div>
-                <div style='font-size: 0.9em; color: #666; margin-top: 8px; font-style: italic;'>
-                    All questions are based on your uploaded document content
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        # Simple quiz section - no header bar
         
         # Check if still loading
         if content.get('loading_ai', False) and not hasattr(st.session_state, 'direct_quiz'):
