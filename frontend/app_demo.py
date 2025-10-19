@@ -2309,25 +2309,59 @@ def complete_text_extraction(uploaded_file):
         # FAST PDF PROCESSING - Extract ALL text
         if uploaded_file.name.lower().endswith('.pdf'):
             
-            # STRATEGY 1: Raw text extraction (works best for your PDF!)
+            # STRATEGY 1: Raw text extraction with proper cleaning
             try:
                 uploaded_file.seek(0)
                 raw_content = uploaded_file.read()
                 text_content = raw_content.decode('utf-8', errors='ignore')
                 
                 if len(text_content.strip()) > 100:
-                    # Clean up the raw text
+                    # COMPREHENSIVE TEXT CLEANING
+                    import re
+                    
+                    # Remove PDF metadata and control characters
+                    text_content = re.sub(r'%PDF.*?%%EOF', '', text_content, flags=re.DOTALL)
+                    text_content = re.sub(r'/[A-Za-z]+\s*\d*\s*\d*\s*R', '', text_content)  # Remove PDF references
+                    text_content = re.sub(r'<<.*?>>', '', text_content)  # Remove PDF objects
+                    text_content = re.sub(r'stream.*?endstream', '', text_content, flags=re.DOTALL)  # Remove streams
+                    text_content = re.sub(r'obj.*?endobj', '', text_content, flags=re.DOTALL)  # Remove objects
+                    
+                    # Remove control characters and invalid XML/HTML characters
+                    text_content = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text_content)
+                    
+                    # Split into lines and clean
                     lines = text_content.split('\n')
                     cleaned_lines = []
+                    
                     for line in lines:
                         line = line.strip()
-                        if line and not line.startswith('%') and len(line) > 3:
-                            cleaned_lines.append(line)
+                        # Skip PDF metadata lines, empty lines, and very short lines
+                        if (line and 
+                            not line.startswith('%') and 
+                            not line.startswith('/') and
+                            not line.startswith('<<') and
+                            not line.startswith('>>') and
+                            not re.match(r'^\d+\s+\d+\s+obj', line) and
+                            not re.match(r'^endobj', line) and
+                            not re.match(r'^stream', line) and
+                            not re.match(r'^endstream', line) and
+                            len(line) > 3 and
+                            not line.isdigit()):
+                            
+                            # Clean the line further
+                            line = re.sub(r'[^\w\s\.,!?;:()\-\'"]+', ' ', line)  # Keep only safe characters
+                            line = re.sub(r'\s+', ' ', line)  # Normalize whitespace
+                            
+                            if line.strip():
+                                cleaned_lines.append(line.strip())
                     
                     if cleaned_lines:
-                        extracted_text = '\n'.join(cleaned_lines)
+                        extracted_text = '\n\n'.join(cleaned_lines)
                     else:
-                        extracted_text = text_content
+                        # If cleaning removed everything, try a simpler approach
+                        simple_clean = re.sub(r'[^\w\s\.,!?;:()\-\'"]+', ' ', text_content)
+                        simple_clean = re.sub(r'\s+', ' ', simple_clean)
+                        extracted_text = simple_clean.strip()
                     
                     # Success - clear progress and set content
                     progress_placeholder.empty()
@@ -2709,8 +2743,14 @@ def display_processed_content():
         else:
             st.markdown("*Analyze the text below to understand its key concepts and themes.* 🌱")
         
-        # Always show the extracted text immediately
+        # Always show the extracted text immediately with proper escaping
         if content.get('cleaned_text'):
+            import html
+            # Escape HTML characters to prevent InvalidCharacterError
+            safe_text = html.escape(content.get('cleaned_text', ''))
+            # Convert newlines to HTML breaks for proper display
+            safe_text = safe_text.replace('\n', '<br>')
+            
             st.markdown(f"""
                 <div style='background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); 
                             padding: 20px; 
@@ -2721,7 +2761,7 @@ def display_processed_content():
                             max-height: 70vh;
                             overflow-y: auto;
                             margin: 0;'>
-                    {content.get('cleaned_text', '')}
+                    {safe_text}
                 </div>
             """, unsafe_allow_html=True)
     
