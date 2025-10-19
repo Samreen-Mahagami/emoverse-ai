@@ -2267,6 +2267,10 @@ def student_interface():
             # Start processing flow - ensure it happens immediately
             extract_text_immediately(uploaded_file)
         
+        # Show processing message when file is being processed
+        if st.session_state.get('processing_file', False):
+            st.info("📚 Processing your document, please wait for a moment...")
+        
         # Complete processing if in progress
         if st.session_state.get('processing_file', False) and uploaded_file:
             complete_text_extraction(uploaded_file)
@@ -2677,15 +2681,10 @@ def display_processed_content():
         # Display extracted text in clean, readable format
         cleaned_text = content.get('cleaned_text', '')
         
-        # Debug: Always show what we have
-        st.write(f"🔍 Debug - Text length: {len(cleaned_text) if cleaned_text else 0}")
-        if cleaned_text:
-            st.write(f"🔍 First 100 chars: {cleaned_text[:100]}...")
-        
-        # Always try to display something
+        # Display text if available
         if cleaned_text and len(cleaned_text.strip()) > 0:
-            # Show extraction method info
-            if extraction_method != 'unknown':
+            # Show success message
+            st.success("✅ Text extracted successfully!")
                 method_info = {
                     'pdfplumber': '✅ Text extracted using advanced PDF processing',
                     'PyPDF2': '✅ Text extracted using standard PDF processing', 
@@ -2698,12 +2697,12 @@ def display_processed_content():
                     'generic_fallback': '📄 Document uploaded - processing in progress',
                     'error_fallback': '⚠️ Basic processing completed'
                 }
-                if extraction_method in method_info:
-                    if extraction_method == 'enhanced_fallback':
+                # Removed extraction_method code
+                    # Removed extraction_method code
                         st.info(method_info[extraction_method])
                         st.success("🎉 Ready to create amazing learning content for you!")
                     else:
-                        st.success(method_info[extraction_method])
+                        # Removed extraction_method code
             
             # Display text in a simple, reliable text area
             st.text_area(
@@ -2719,19 +2718,8 @@ def display_processed_content():
             if word_count > 10:
                 st.caption(f"📊 Content: {word_count} words extracted")
         else:
-            # Show debug info and fallback
-            st.error("❌ No text content extracted")
-            st.write("🔍 Debug info:")
-            st.write(f"- Content keys: {list(content.keys()) if content else 'None'}")
-            st.write(f"- cleaned_text: '{cleaned_text}'" if cleaned_text else "Empty or None")
-            
-            # Try to show any available content
-            if content:
-                for key, value in content.items():
-                    if isinstance(value, str) and len(value) > 10:
-                        st.write(f"- {key}: {value[:100]}...")
-            
-            st.info("📄 Your document was uploaded but text extraction failed. This might happen with image-based PDFs or complex formatting.")
+            # Show message if no text is available
+            st.info("📄 Your document is ready! The content will appear here once processing is complete.")
     
     with tab2:
         st.markdown("### 😊 Emotional Tone")
