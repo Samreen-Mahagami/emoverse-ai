@@ -2309,73 +2309,45 @@ def complete_text_extraction(uploaded_file):
         # FAST PDF PROCESSING - Extract ALL text
         if uploaded_file.name.lower().endswith('.pdf'):
             
-            # STRATEGY 1: Raw text extraction with proper cleaning
+            # STRATEGY 1: Raw text extraction with MINIMAL cleaning (preserve all content)
             try:
                 uploaded_file.seek(0)
                 raw_content = uploaded_file.read()
                 text_content = raw_content.decode('utf-8', errors='ignore')
                 
-                if len(text_content.strip()) > 100:
-                    # COMPREHENSIVE TEXT CLEANING
+                if len(text_content.strip()) > 50:  # Lower threshold
+                    # MINIMAL CLEANING - Only remove characters that cause HTML errors
                     import re
                     
-                    # Remove PDF metadata and control characters
-                    text_content = re.sub(r'%PDF.*?%%EOF', '', text_content, flags=re.DOTALL)
-                    text_content = re.sub(r'/[A-Za-z]+\s*\d*\s*\d*\s*R', '', text_content)  # Remove PDF references
-                    text_content = re.sub(r'<<.*?>>', '', text_content)  # Remove PDF objects
-                    text_content = re.sub(r'stream.*?endstream', '', text_content, flags=re.DOTALL)  # Remove streams
-                    text_content = re.sub(r'obj.*?endobj', '', text_content, flags=re.DOTALL)  # Remove objects
+                    # Only remove control characters that cause InvalidCharacterError
+                    # Keep ALL readable text content
+                    cleaned_text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text_content)
                     
-                    # Remove control characters and invalid XML/HTML characters
-                    text_content = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text_content)
+                    # Remove only obvious PDF metadata at start/end
+                    cleaned_text = re.sub(r'^%PDF.*?\n', '', cleaned_text)
+                    cleaned_text = re.sub(r'%%EOF.*?$', '', cleaned_text)
                     
-                    # Split into lines and clean
-                    lines = text_content.split('\n')
-                    cleaned_lines = []
+                    # Keep the full text content - just clean up excessive whitespace
+                    cleaned_text = re.sub(r'\n\s*\n\s*\n', '\n\n', cleaned_text)  # Max 2 newlines
+                    cleaned_text = cleaned_text.strip()
                     
-                    for line in lines:
-                        line = line.strip()
-                        # Skip PDF metadata lines, empty lines, and very short lines
-                        if (line and 
-                            not line.startswith('%') and 
-                            not line.startswith('/') and
-                            not line.startswith('<<') and
-                            not line.startswith('>>') and
-                            not re.match(r'^\d+\s+\d+\s+obj', line) and
-                            not re.match(r'^endobj', line) and
-                            not re.match(r'^stream', line) and
-                            not re.match(r'^endstream', line) and
-                            len(line) > 3 and
-                            not line.isdigit()):
-                            
-                            # Clean the line further
-                            line = re.sub(r'[^\w\s\.,!?;:()\-\'"]+', ' ', line)  # Keep only safe characters
-                            line = re.sub(r'\s+', ' ', line)  # Normalize whitespace
-                            
-                            if line.strip():
-                                cleaned_lines.append(line.strip())
-                    
-                    if cleaned_lines:
-                        extracted_text = '\n\n'.join(cleaned_lines)
-                    else:
-                        # If cleaning removed everything, try a simpler approach
-                        simple_clean = re.sub(r'[^\w\s\.,!?;:()\-\'"]+', ' ', text_content)
-                        simple_clean = re.sub(r'\s+', ' ', simple_clean)
-                        extracted_text = simple_clean.strip()
-                    
-                    # Success - clear progress and set content
-                    progress_placeholder.empty()
-                    st.session_state.processed_content = {
-                        'cleaned_text': extracted_text,
-                        'sentiment': {'label': 'NEUTRAL', 'score': 0.5},
-                        'themes': ['learning', 'education'],
-                        'complexity': 'appropriate',
-                        'loading_ai': True,
-                        'file_uploaded': True
-                    }
-                    st.session_state.processing_file = False
-                    st.rerun()
-                    return
+                    # If we have substantial content after cleaning, use it
+                    if len(cleaned_text.strip()) > 50:
+                        extracted_text = cleaned_text
+                        
+                        # Success - clear progress and set content
+                        progress_placeholder.empty()
+                        st.session_state.processed_content = {
+                            'cleaned_text': extracted_text,
+                            'sentiment': {'label': 'NEUTRAL', 'score': 0.5},
+                            'themes': ['learning', 'education'],
+                            'complexity': 'appropriate',
+                            'loading_ai': True,
+                            'file_uploaded': True
+                        }
+                        st.session_state.processing_file = False
+                        st.rerun()
+                        return
                     
             except:
                 pass
