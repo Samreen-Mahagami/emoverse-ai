@@ -1652,14 +1652,30 @@ def generate_lesson_plan_from_content(extracted_text, grade_level, duration):
         import boto3
         bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
         
-        # Calculate phase durations based on total duration
-        def round_to_5(value):
-            return max(5, round(value / 5) * 5)
+        # Calculate phase durations in clean 5-minute intervals
+        def calculate_clean_durations(total_duration):
+            # Ensure total is divisible by 5
+            clean_total = (total_duration // 5) * 5
+            
+            if clean_total == 30:
+                return 5, 15, 5, 5  # warmup, main, practice, wrap-up
+            elif clean_total == 45:
+                return 5, 25, 10, 5
+            elif clean_total == 60:
+                return 10, 30, 15, 5
+            else:
+                # For other durations, distribute proportionally in 5-minute chunks
+                warmup = 5
+                wrap_up = 5
+                remaining = clean_total - warmup - wrap_up
+                
+                # Split remaining time between main (60%) and practice (40%)
+                main = ((remaining * 0.6) // 5) * 5
+                practice = remaining - main
+                
+                return int(warmup), int(main), int(practice), int(wrap_up)
         
-        warmup_time = round_to_5(duration * 0.20)  # 20% of total
-        main_time = round_to_5(duration * 0.45)    # 45% of total
-        extension_time = round_to_5(duration * 0.25)  # 25% of total
-        assessment_time = max(5, duration - warmup_time - main_time - extension_time)
+        warmup_time, main_time, extension_time, assessment_time = calculate_clean_durations(duration)
         
         prompt = f"""Based on this educational content, create a SIMPLE lesson plan for Grade {grade_level} students.
 
@@ -1786,14 +1802,30 @@ def create_content_based_lesson_plan(extracted_text, grade_level, duration):
     else:
         lesson_title = "Social-Emotional Learning Through Reading"
     
-    # Calculate durations
-    def round_to_5(value):
-        return max(5, round(value / 5) * 5)
+    # Calculate durations in clean 5-minute intervals
+    def calculate_clean_durations(total_duration):
+        # Ensure total is divisible by 5
+        clean_total = (total_duration // 5) * 5
+        
+        if clean_total == 30:
+            return 5, 15, 5, 5  # warmup, main, practice, wrap-up
+        elif clean_total == 45:
+            return 5, 25, 10, 5
+        elif clean_total == 60:
+            return 10, 30, 15, 5
+        else:
+            # For other durations, distribute proportionally in 5-minute chunks
+            warmup = 5
+            wrap_up = 5
+            remaining = clean_total - warmup - wrap_up
+            
+            # Split remaining time between main (60%) and practice (40%)
+            main = ((remaining * 0.6) // 5) * 5
+            practice = remaining - main
+            
+            return int(warmup), int(main), int(practice), int(wrap_up)
     
-    warmup_time = round_to_5(duration * 0.20)
-    main_time = round_to_5(duration * 0.45)
-    extension_time = round_to_5(duration * 0.25)
-    assessment_time = max(5, duration - warmup_time - main_time - extension_time)
+    warmup_time, main_time, extension_time, assessment_time = calculate_clean_durations(duration)
     
     # Create SIMPLE content-specific activities
     warmup_activities = []
