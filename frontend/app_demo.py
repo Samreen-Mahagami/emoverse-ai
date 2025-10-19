@@ -10,6 +10,11 @@ import json
 from io import BytesIO
 import uuid
 import base64
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 # AWS Configuration
 AWS_REGION = "us-east-1"
@@ -3776,36 +3781,15 @@ def display_lesson_plan(plan):
         </div>
     """, unsafe_allow_html=True)
     
-    # Download button
-    lesson_text = f"""
-LESSON PLAN: {plan.get('lesson_title', 'Lesson Plan')}
-Grade Level: {plan.get('grade_level')}
-Duration: {plan.get('duration_minutes')} minutes
-
-LEARNING OBJECTIVES:
-{chr(10).join('- ' + obj for obj in plan.get('learning_objectives', []))}
-
-SEL COMPETENCIES:
-{', '.join(plan.get('sel_competencies', []))}
-
-WARM-UP ({plan.get('phases', {}).get('warmup', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('- ' + act for act in plan.get('phases', {}).get('warmup', {}).get('activities', []))}
-
-READING & DISCUSSION ({plan.get('phases', {}).get('reading_discussion', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('- ' + act for act in plan.get('phases', {}).get('reading_discussion', {}).get('activities', []))}
-
-PRACTICE ACTIVITY ({plan.get('phases', {}).get('practice_activity', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('- ' + act for act in plan.get('phases', {}).get('practice_activity', {}).get('activities', []))}
-
-WRAP-UP ({plan.get('phases', {}).get('wrap_up', {}).get('duration_minutes', 0)} minutes):
-{chr(10).join('- ' + method for method in plan.get('phases', {}).get('wrap_up', {}).get('methods', []))}
-"""
+    # Generate PDF
+    pdf_buffer = generate_lesson_plan_pdf(plan)
     
+    # Download button for PDF
     st.download_button(
-        label="📥 Download Lesson Plan",
-        data=lesson_text,
-        file_name=f"lesson_plan_{plan.get('lesson_title', 'plan').replace(' ', '_')}.txt",
-        mime="text/plain",
+        label="📥 Download Lesson Plan (PDF)",
+        data=pdf_buffer,
+        file_name=f"lesson_plan_{plan.get('lesson_title', 'plan').replace(' ', '_')}.pdf",
+        mime="application/pdf",
         use_container_width=True
     )
     
