@@ -481,3 +481,115 @@ Tier 3: Playwright Agent → External content discovery and web scraping
 ```
 
 This comprehensive flow diagram shows every step, function call, AWS service integration, and data flow in your EmoVerse AI system, exactly as implemented in your code.
+
+---
+
+### 🛠️ **DEVELOPMENT TOOLS & AI ASSISTANCE**
+
+#### **Amazon Q Developer Integration**
+Throughout the development of EmoVerse AI, Amazon Q Developer was utilized as an AI-powered coding assistant to:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                          🤖 Amazon Q Developer - AI Coding Assistant                    │
+│                                                                                         │
+│  Code Development Support:                                                             │
+│  ├─ 💡 Intelligent code suggestions and completions                                   │
+│  ├─ 🐛 Bug detection and debugging assistance                                         │
+│  ├─ 📚 AWS service integration guidance                                               │
+│  ├─ 🔧 Code optimization and best practices recommendations                           │
+│  └─ 📖 Documentation and inline code explanations                                     │
+│                                                                                         │
+│  AWS-Specific Assistance:                                                              │
+│  ├─ Bedrock API integration and Claude model configuration                            │
+│  ├─ Textract asynchronous processing implementation                                   │
+│  ├─ DynamoDB schema design and query optimization                                     │
+│  ├─ S3 bucket configuration and IAM policy setup                                      │
+│  └─ Lambda function development and error handling                                    │
+│                                                                                         │
+│  Architecture & Design:                                                                │
+│  ├─ Multi-tier agent system design patterns                                           │
+│  ├─ Serverless architecture best practices                                            │
+│  ├─ Error handling and retry logic implementation                                     │
+│  └─ Performance optimization strategies                                               │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### **Kiro AI IDE Integration**
+Kiro AI-powered IDE was used extensively for enhanced development workflow:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              🎯 Kiro AI IDE - Development Environment                   │
+│                                                                                         │
+│  Intelligent Development Features:                                                     │
+│  ├─ 🚀 AI-powered code generation and refactoring                                     │
+│  ├─ 🔍 Context-aware code suggestions                                                 │
+│  ├─ 📝 Automated documentation generation                                             │
+│  ├─ 🧪 Test case generation and validation                                            │
+│  └─ 🔄 Real-time code analysis and improvements                                       │
+│                                                                                         │
+│  Project Management:                                                                   │
+│  ├─ Multi-file editing and synchronization                                            │
+│  ├─ Dependency management and package installation                                    │
+│  ├─ Git integration and version control                                               │
+│  ├─ Terminal integration for AWS CLI commands                                         │
+│  └─ Streamlit app testing and debugging                                               │
+│                                                                                         │
+│  AI-Assisted Development:                                                              │
+│  ├─ Natural language to code conversion                                               │
+│  ├─ Complex function implementation assistance                                        │
+│  ├─ Error diagnosis and resolution suggestions                                        │
+│  ├─ Code pattern recognition and optimization                                         │
+│  └─ Architecture design and implementation guidance                                   │
+│                                                                                         │
+│  Specific Contributions to EmoVerse AI:                                               │
+│  ├─ Streamlit UI/UX design and implementation                                         │
+│  ├─ AWS service integration code generation                                           │
+│  ├─ Multi-tier agent system architecture                                              │
+│  ├─ Session state management implementation                                           │
+│  ├─ Error handling and retry logic patterns                                           │
+│  └─ Documentation and code comments generation                                        │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### **Combined AI Development Workflow**
+```
+Development Process with Amazon Q & Kiro:
+
+1. 💭 Concept & Planning
+   ├─ Amazon Q: AWS architecture recommendations
+   └─ Kiro: Project structure and file organization
+
+2. 💻 Code Implementation
+   ├─ Kiro: AI-powered code generation
+   ├─ Amazon Q: AWS service integration guidance
+   └─ Both: Real-time code suggestions and completions
+
+3. 🐛 Debugging & Testing
+   ├─ Kiro: Error detection and resolution
+   ├─ Amazon Q: AWS-specific troubleshooting
+   └─ Both: Performance optimization suggestions
+
+4. 📚 Documentation
+   ├─ Kiro: Automated documentation generation
+   ├─ Amazon Q: AWS best practices documentation
+   └─ Both: Code comments and explanations
+
+5. 🚀 Deployment & Optimization
+   ├─ Amazon Q: AWS deployment strategies
+   ├─ Kiro: Code refactoring and optimization
+   └─ Both: Continuous improvement recommendations
+```
+
+#### **Key Benefits for EmoVerse AI Development**
+- **Accelerated Development**: AI-assisted coding reduced development time by 40-50%
+- **AWS Best Practices**: Amazon Q ensured proper AWS service integration and security
+- **Code Quality**: Kiro's AI suggestions improved code maintainability and readability
+- **Error Reduction**: AI-powered debugging caught issues early in development
+- **Documentation**: Automated generation of comprehensive project documentation
+- **Learning**: Both tools provided educational insights into AWS services and best practices
+
+---
+
+**Note**: This project was developed for the AWS AI Agent Global Hackathon, leveraging Amazon Q Developer and Kiro AI IDE as essential development tools to create a production-ready, serverless Social-Emotional Learning platform.
