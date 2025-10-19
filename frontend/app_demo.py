@@ -3818,13 +3818,6 @@ def teacher_interface():
                 st.session_state.teacher_id = None
                 st.rerun()
 
-
-    
-    except Exception as e:
-        # Ultimate error fallback
-        error_text = f"Error generating PDF: {str(e)}\n\nLesson Plan: {plan.get('lesson_title', 'Lesson Plan')}"
-        return error_text.encode('utf-8')
-
 def display_lesson_plan(plan):
     # Debug: Check if plan data exists
     if not plan:
