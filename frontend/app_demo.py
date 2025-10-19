@@ -3961,7 +3961,7 @@ def generate_lesson_plan_pdf(plan):
         pdf.set_font('Arial', 'B', 20)
         pdf.set_text_color(45, 55, 72)  # #2d3748
         title = plan.get('lesson_title', 'Lesson Plan')
-        pdf.cell(0, 15, f"📚 {title}", 0, 1, 'C')
+        pdf.cell(0, 15, f"LESSON PLAN: {title}", 0, 1, 'C')
         pdf.ln(5)
         
         # Basic Info
@@ -3975,21 +3975,21 @@ def generate_lesson_plan_pdf(plan):
         # Learning Objectives
         pdf.set_font('Arial', 'B', 14)
         pdf.set_text_color(102, 126, 234)  # #667eea
-        pdf.cell(0, 10, "🎯 Learning Objectives", 0, 1)
+        pdf.cell(0, 10, "LEARNING OBJECTIVES", 0, 1)
         pdf.set_font('Arial', '', 11)
         pdf.set_text_color(0, 0, 0)
         for obj in plan.get('learning_objectives', []):
-            pdf.cell(0, 6, f"• {obj}", 0, 1)
+            pdf.cell(0, 6, f"- {obj}", 0, 1)
         pdf.ln(3)
         
         # SEL Competencies
         pdf.set_font('Arial', 'B', 14)
         pdf.set_text_color(102, 126, 234)
-        pdf.cell(0, 10, "💡 SEL Competencies", 0, 1)
+        pdf.cell(0, 10, "SEL COMPETENCIES", 0, 1)
         pdf.set_font('Arial', '', 11)
         pdf.set_text_color(0, 0, 0)
         for comp in plan.get('sel_competencies', []):
-            pdf.cell(0, 6, f"⭐ {comp}", 0, 1)
+            pdf.cell(0, 6, f"- {comp}", 0, 1)
         pdf.ln(5)
         
         # Lesson Phases
@@ -3999,47 +3999,47 @@ def generate_lesson_plan_pdf(plan):
         warmup = phases.get('warmup', {})
         pdf.set_font('Arial', 'B', 14)
         pdf.set_text_color(255, 107, 107)  # Red theme
-        pdf.cell(0, 10, f"🔥 Warm-up ({warmup.get('duration_minutes', 0)} minutes)", 0, 1)
+        pdf.cell(0, 10, f"WARM-UP ({warmup.get('duration_minutes', 0)} minutes)", 0, 1)
         pdf.set_font('Arial', '', 11)
         pdf.set_text_color(0, 0, 0)
         for activity in warmup.get('activities', []):
-            pdf.cell(0, 6, f"• {activity}", 0, 1)
+            pdf.cell(0, 6, f"- {activity}", 0, 1)
         pdf.ln(3)
         
         # Reading & Discussion
         reading = phases.get('reading_discussion', {})
         pdf.set_font('Arial', 'B', 14)
         pdf.set_text_color(102, 126, 234)
-        pdf.cell(0, 10, f"📖 Reading & Discussion ({reading.get('duration_minutes', 0)} minutes)", 0, 1)
+        pdf.cell(0, 10, f"READING & DISCUSSION ({reading.get('duration_minutes', 0)} minutes)", 0, 1)
         pdf.set_font('Arial', '', 11)
         pdf.set_text_color(0, 0, 0)
         for activity in reading.get('activities', []):
-            pdf.cell(0, 6, f"• {activity}", 0, 1)
+            pdf.cell(0, 6, f"- {activity}", 0, 1)
         pdf.ln(3)
         
         # Practice Activity
         practice = phases.get('practice_activity', {})
         pdf.set_font('Arial', 'B', 14)
         pdf.set_text_color(245, 158, 11)  # Orange theme
-        pdf.cell(0, 10, f"✏️ Practice Activity ({practice.get('duration_minutes', 0)} minutes)", 0, 1)
+        pdf.cell(0, 10, f"PRACTICE ACTIVITY ({practice.get('duration_minutes', 0)} minutes)", 0, 1)
         pdf.set_font('Arial', '', 11)
         pdf.set_text_color(0, 0, 0)
         for activity in practice.get('activities', []):
-            pdf.cell(0, 6, f"• {activity}", 0, 1)
+            pdf.cell(0, 6, f"- {activity}", 0, 1)
         pdf.ln(3)
         
         # Wrap-up
         wrapup = phases.get('wrap_up', {})
         pdf.set_font('Arial', 'B', 14)
         pdf.set_text_color(16, 185, 129)  # Green theme
-        pdf.cell(0, 10, f"🎯 Wrap-up ({wrapup.get('duration_minutes', 0)} minutes)", 0, 1)
+        pdf.cell(0, 10, f"WRAP-UP ({wrapup.get('duration_minutes', 0)} minutes)", 0, 1)
         pdf.set_font('Arial', '', 11)
         pdf.set_text_color(0, 0, 0)
         for method in wrapup.get('methods', []):
-            pdf.cell(0, 6, f"• {method}", 0, 1)
+            pdf.cell(0, 6, f"- {method}", 0, 1)
         
         # Get PDF as bytes
-        return pdf.output(dest='S').encode('latin1')
+        return pdf.output()
         
     except ImportError:
         # Try matplotlib for basic PDF generation
