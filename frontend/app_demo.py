@@ -2299,9 +2299,9 @@ def complete_text_extraction(uploaded_file):
     """SIMPLE & DIRECT: Extract ALL text and display it immediately"""
     
     try:
-        # Show processing message
+        # Show clean processing message
         progress_placeholder = st.empty()
-        progress_placeholder.info("📚 Your document is processing, please wait a moment...")
+        progress_placeholder.info("📚 Processing your document, please wait for a moment...")
         
         extracted_text = ""
         
@@ -2367,7 +2367,7 @@ def complete_text_extraction(uploaded_file):
         if not extracted_text.strip():
             extracted_text = f"Document: {uploaded_file.name}\nContent uploaded successfully."
         
-        # Clear progress and set content immediately
+        # Clear progress message
         progress_placeholder.empty()
         
         # Set the content directly
@@ -2608,27 +2608,33 @@ def display_processed_content():
         else:
             st.markdown("*Analyze the text below to understand its key concepts and themes.* 🌱")
         
-        # Always show the extracted text immediately with proper escaping
-        if content.get('cleaned_text'):
+        # Display extracted text in clean, readable format
+        cleaned_text = content.get('cleaned_text', '')
+        
+        if cleaned_text and len(cleaned_text.strip()) > 0:
             import html
             # Escape HTML characters to prevent InvalidCharacterError
-            safe_text = html.escape(content.get('cleaned_text', ''))
+            safe_text = html.escape(cleaned_text)
             # Convert newlines to HTML breaks for proper display
             safe_text = safe_text.replace('\n', '<br>')
             
             st.markdown(f"""
                 <div style='background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); 
-                            padding: 20px; 
+                            padding: 25px; 
                             border-radius: 15px; 
-                            font-size: 1.05em; 
-                            line-height: 1.6;
+                            font-size: 1.1em; 
+                            line-height: 1.7;
                             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
                             max-height: 70vh;
                             overflow-y: auto;
-                            margin: 0;'>
+                            margin: 15px 0;
+                            border: 1px solid rgba(255,255,255,0.2);'>
                     {safe_text}
                 </div>
             """, unsafe_allow_html=True)
+        else:
+            # Show message if no text is available
+            st.info("📄 Your document is ready! The content will appear here once processing is complete.")
     
     with tab2:
         st.markdown("### 😊 Emotional Tone")
