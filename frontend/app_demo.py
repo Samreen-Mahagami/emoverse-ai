@@ -169,7 +169,7 @@ st.markdown("""
     /* Special styling for main page Student/Teacher buttons */
     .stButton > button[key*="student_btn" i], 
     .stButton > button[key*="teacher_btn" i] {
-        font-size: 4.2em !important;
+        font-size: 5.5em !important;
         padding: 35px 50px !important;
         min-height: 120px !important;
         font-weight: 900 !important;
@@ -2055,7 +2055,7 @@ def main():
         
             with btn_col1:
                 # Student button - enhanced
-                if st.button("👨‍🎓 Student", key="student_btn", use_container_width=True, type="primary"):
+                if st.button("👨‍🎓 Student", key="student_btn", use_container_width=True, type="secondary"):
                     st.session_state.user_type = "student"
                     st.rerun()
             
