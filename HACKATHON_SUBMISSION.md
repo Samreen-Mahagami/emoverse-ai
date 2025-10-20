@@ -87,25 +87,29 @@ Our platform implements a **sophisticated multi-agent architecture** with intell
 ## 🎨 AWS Services Used
 
 ### AI/ML Services
-- ✅ **AWS Bedrock** - Claude Sonnet 4.5 for content generation
-- ✅ **AWS Textract** - OCR for PDF text extraction
-- ✅ **AWS Comprehend** - Sentiment analysis and emotion detection
-- ✅ **Text Processing** - Direct text input for Q&A
+- ✅ **AWS Bedrock** - Claude Sonnet 4.5 for AI content generation (stories, quizzes, Q&A, lesson plans)
+- ✅ **AWS Textract** - OCR for PDF and image text extraction
+- ✅ **AWS Comprehend** - Sentiment analysis and emotion detection (POSITIVE, NEGATIVE, NEUTRAL, MIXED)
 
 ### Compute & Orchestration
-- ✅ **AWS Lambda** - 10 serverless functions
-- ✅ **API Gateway** - REST API endpoints
-- ✅ **Step Functions** - Workflow orchestration (implicit)
+- ✅ **AWS Lambda** - 13 serverless functions for compute
+- ✅ **AWS API Gateway** - RESTful API endpoints (optional)
+- ✅ **AWS CloudFormation** - Infrastructure as Code deployment
+- ✅ **AWS SAM** - Serverless Application Model for Lambda deployment
 
 ### Storage & Database
-- ✅ **Amazon S3** - Document and content storage
-- ✅ **Amazon DynamoDB** - User data, preferences, analytics
-- ✅ **CloudWatch** - Logging and monitoring
+- ✅ **Amazon S3** - Document storage and file management
+- ✅ **Amazon DynamoDB** - Long-term memory, user preferences, quiz results, analytics
+- ✅ **AWS CloudWatch** - Logging, monitoring, and observability
 
-### Infrastructure
-- ✅ **AWS SAM** - Infrastructure as Code
-- ✅ **CloudFormation** - Resource management
-- ✅ **IAM** - Security and permissions
+### Security & Management
+- ✅ **AWS IAM** - Security roles and permissions with least privilege
+- ✅ **AWS VPC** - Network isolation (optional)
+- ✅ **AWS Cognito** - User authentication (optional)
+
+### Development Tools
+- ✅ **Amazon Q Developer** - AI-assisted AWS integration and best practices
+- ✅ **Kiro AI IDE** - Accelerated development with AI code generation
 
 ---
 
@@ -568,7 +572,7 @@ MIT License - Open source for educational use
 
 ---
 
-**Built for AWS AI Agent Global Hackathon 2024** 🏆
+**Built for AWS AI Agent Global Hackathon 2025** 🏆
 
 **Powered by AWS Bedrock, Lambda, and AI Services** 🚀
 
