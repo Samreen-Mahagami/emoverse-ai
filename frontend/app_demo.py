@@ -2206,9 +2206,12 @@ def complete_text_extraction(uploaded_file):
                                 extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
                                 continue
                     
-                    # If no text was extracted from PDF
-                    if not extracted_text.strip():
+                    # If no text was extracted from PDF, show message
+                    if not extracted_text or not extracted_text.strip():
                         extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nThis PDF has been uploaded successfully. The document appears to contain images or formatted content that will be processed to create your learning materials."
+                    else:
+                        # Text was successfully extracted
+                        pass
                 
                 except Exception as pdf_error:
                     # PDF processing failed - show user-friendly message
