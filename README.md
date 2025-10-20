@@ -21,7 +21,7 @@ A comprehensive serverless platform that combines AWS AI services, Claude Sonnet
 ### For Students
 - 📄 **Smart Document Processing**: Upload PDFs/images, get clean extracted text
 - 😊 **Emotion Analysis**: Real-time sentiment and emotion detection
-- 🎤 **Voice Q&A**: Ask questions by voice or text, get AI-powered answers
+- 🎤 **Q&A**: Ask questions by text, get AI-powered answers
 - 📚 **Adaptive Stories**: Grade-specific SEL stories that adapt to preferences
 - 🔄 **Smart Fallback**: If you don't like a story, system regenerates or finds external stories
 - 🧠 **Personalized Learning**: System remembers your preferences and adapts
