@@ -726,57 +726,38 @@ def upload_to_s3(file, student_id):
         st.error(f"❌ Upload failed: {str(e)}")
         return None
 
-def extract_text_from_s3(file_key):
-    """Extract text using AWS Textract with robust error handling"""
+def extract_text_from_s3(file_key, is_image=False):
+    """Extract text using AWS Textract - synchronous for images, skip for PDFs"""
     try:
         if not file_key:
             return None
-            
-        # Start asynchronous text detection
-        response = textract_client.start_document_text_detection(
-            DocumentLocation={
-                'S3Object': {
-                    'Bucket': S3_BUCKET,
-                    'Name': file_key
-                }
-            }
-        )
         
-        job_id = response['JobId']
-        
-        # Poll for completion with progress
-        max_attempts = 30  # 30 attempts * 3 seconds = 90 seconds max
-        for attempt in range(max_attempts):
-            time_module.sleep(2)
-            
-            result = textract_client.get_document_text_detection(JobId=job_id)
-            status = result['JobStatus']
-            
-            if status == 'SUCCEEDED':
-                # Extract text from all pages
+        # For images, use synchronous Textract (fast, works immediately)
+        if is_image:
+            try:
+                response = textract_client.detect_document_text(
+                    Document={
+                        'S3Object': {
+                            'Bucket': S3_BUCKET,
+                            'Name': file_key
+                        }
+                    }
+                )
+                
+                # Extract text from response
                 text = ""
-                for block in result.get('Blocks', []):
+                for block in response.get('Blocks', []):
                     if block['BlockType'] == 'LINE':
                         text += block['Text'] + "\n"
                 
-                # Get additional pages if any
-                next_token = result.get('NextToken')
-                while next_token:
-                    result = textract_client.get_document_text_detection(
-                        JobId=job_id,
-                        NextToken=next_token
-                    )
-                    for block in result.get('Blocks', []):
-                        if block['BlockType'] == 'LINE':
-                            text += block['Text'] + "\n"
-                    next_token = result.get('NextToken')
+                return text.strip() if text.strip() else None
                 
-                return text.strip()
-            
-            elif status == 'FAILED':
+            except Exception as img_error:
+                st.warning(f"⚠️ Could not extract text from image: {str(img_error)}")
                 return None
         
-        # Timeout
+        # For PDFs, don't use Textract - rely on PyPDF2/pdfplumber
+        # Textract async is too slow and unreliable for real-time use
         return None
         
     except Exception as e:
@@ -2238,43 +2219,20 @@ def complete_text_extraction(uploaded_file):
                             extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
                             continue
                     
-                    # If no text was extracted, try alternative method
+                    # If no text was extracted from PDF
                     if not extracted_text.strip():
-                        # Try using AWS Textract as fallback for PDFs
-                        try:
-                            file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
-                            if file_key:
-                                aws_text = extract_text_from_s3(file_key)
-                                if aws_text and aws_text.strip():
-                                    extracted_text = aws_text
-                                else:
-                                    extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nThis PDF has been uploaded successfully. The document appears to contain images or formatted content that will be processed to create your learning materials."
-                            else:
-                                extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Processing content for learning activities."
-                        except:
-                            extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Content will be processed to create engaging learning materials."
+                        extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nThis PDF has been uploaded successfully. The document appears to contain images or formatted content that will be processed to create your learning materials."
                 
                 except Exception as pdf_error:
-                    # PDF processing failed, try AWS Textract
-                    try:
-                        file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
-                        if file_key:
-                            aws_text = extract_text_from_s3(file_key)
-                            if aws_text and aws_text.strip():
-                                extracted_text = aws_text
-                            else:
-                                extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument processing in progress. Content will be available shortly."
-                        else:
-                            extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded. Processing content for your learning experience."
-                    except:
-                        extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Preparing content for learning activities."
+                    # PDF processing failed - show error message
+                    extracted_text = f"📄 Document: {uploaded_file.name}\n\nCould not extract text from this PDF. The document may contain images or be password-protected. Please try a different file or contact support."
             
-            # For images, use AWS Textract
+            # For images, use AWS Textract (synchronous - fast!)
             elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
                 try:
                     file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
                     if file_key:
-                        aws_text = extract_text_from_s3(file_key)
+                        aws_text = extract_text_from_s3(file_key, is_image=True)
                         if aws_text and aws_text.strip():
                             extracted_text = aws_text
                         else:
