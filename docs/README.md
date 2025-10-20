@@ -47,7 +47,7 @@ EmoVerse AI is a serverless Social-Emotional Learning platform built for the AWS
 
 ### Target Audience
 - Students: Grades 1-10
-- Teachers: K-10 educators
+- Teachers: 1-10 educators
 - Counselors: School mental health professionals
 
 ---
