@@ -86,12 +86,12 @@ Visit `http://localhost:8501` to access the platform!
 
 | Document | Description |
 |----------|-------------|
-| [QUICKSTART.md](QUICKSTART.md) | Get started in 5 minutes |
+| [docs/QUICKSTART.md](docs/QUICKSTART.md) | Get started in 5 minutes |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Detailed system architecture |
-| [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) | Integrate with existing Lambdas |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Production deployment guide |
-| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | File organization |
-| [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) | Complete system overview |
+| [COMPLETE_SYSTEM_FLOW.md](COMPLETE_SYSTEM_FLOW.md) | Complete workflows and system flow |
+| [COMPLETE_SERVERLESS_GUIDE.md](COMPLETE_SERVERLESS_GUIDE.md) | Deployment guide with cost breakdown |
+| [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md) | Complete feature documentation |
+| [HACKATHON_SUBMISSION.md](HACKATHON_SUBMISSION.md) | Hackathon submission details |
 
 ## 🛠️ Technology Stack
 
@@ -219,11 +219,13 @@ MIT License - See LICENSE file for details
 
 Built for the SEL AI Hackathon to support children's mental health and emotional intelligence development.
 
-## 📞 Support
+## 📞 Support & Documentation
 
-- Check [QUICKSTART.md](QUICKSTART.md) for common issues
-- Review CloudWatch logs for debugging
-- See [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) for Lambda integration
+- **Quick Start:** See [docs/QUICKSTART.md](docs/QUICKSTART.md) for getting started
+- **Deployment:** See [COMPLETE_SERVERLESS_GUIDE.md](COMPLETE_SERVERLESS_GUIDE.md) for deployment instructions
+- **Architecture:** See [ARCHITECTURE.md](ARCHITECTURE.md) for system design details
+- **Workflows:** See [COMPLETE_SYSTEM_FLOW.md](COMPLETE_SYSTEM_FLOW.md) for detailed workflows
+- **Debugging:** Review AWS CloudWatch logs for troubleshooting
 
 ---
 
