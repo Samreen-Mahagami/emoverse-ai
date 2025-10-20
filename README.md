@@ -130,7 +130,7 @@ sel-platform/
 1. **Upload**: Student uploads a PDF or image
 2. **Process**: Textract extracts text, Comprehend analyzes emotions
 3. **Display**: Clean text and sentiment shown to student
-4. **Interact**: Student asks questions (voice/text), Claude answers
+4. **Interact**: Student asks questions, Claude answers
 5. **Story**: Student requests a story based on content
    - **Like it?** → Saved to preferences
    - **Dislike?** → Claude regenerates with different approach
@@ -141,7 +141,7 @@ sel-platform/
 ### Teacher Workflow
 
 1. **Upload**: Teacher uploads content
-2. **Generate**: System creates 30-45 min lesson plan
+2. **Generate**: System creates 30-60 min lesson plan
    - Warm-up activities
    - Main learning activities
    - Extension exercises
