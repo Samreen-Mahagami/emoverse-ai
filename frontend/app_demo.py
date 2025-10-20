@@ -2165,6 +2165,7 @@ def complete_text_extraction(uploaded_file):
                         uploaded_file.seek(0)
                         with pdfplumber.open(uploaded_file) as pdf:
                             total_pages = len(pdf.pages)
+                            st.info(f"📄 Processing {total_pages} pages...")
                             
                             # Process ALL pages for children's educational content - OPTIMIZED
                             pages_to_process = total_pages
@@ -2173,14 +2174,25 @@ def complete_text_extraction(uploaded_file):
                             for page_num in range(pages_to_process):
                                 try:
                                     page_text = pdf.pages[page_num].extract_text()
-                                    if page_text and page_text.strip():
-                                        # Include page numbers for navigation
-                                        extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                                    
+                                    # Debug: show what we got
+                                    if page_text:
+                                        st.write(f"Page {page_num + 1}: Found {len(page_text)} characters")
+                                        if page_text.strip():
+                                            # Include page numbers for navigation
+                                            extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                                        else:
+                                            st.warning(f"Page {page_num + 1}: Text found but only whitespace")
+                                    else:
+                                        st.warning(f"Page {page_num + 1}: No text found")
                                         
                                 except Exception as e:
                                     # Log error but continue processing
+                                    st.error(f"Page {page_num + 1}: Error - {str(e)}")
                                     extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
                                     continue
+                            
+                            st.success(f"✅ Extracted {len(extracted_text)} total characters")
                             
                     except ImportError:
                         # Fallback to PyPDF2 if pdfplumber not available
