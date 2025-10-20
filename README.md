@@ -12,7 +12,7 @@ A comprehensive serverless platform that combines AWS AI services, Claude Sonnet
 [![Streamlit](https://img.shields.io/badge/Streamlit-Frontend-red)](https://streamlit.io/)
 [![Hackathon](https://img.shields.io/badge/AWS-AI%20Agent%20Hackathon-yellow)](https://aws.amazon.com/)
 
-> 🏆 **Built for AWS AI Agent Global Hackathon**
+> 🚀 **Built for AWS AI Agent Global Hackathon**
 
 **EmoVerse AI** - A comprehensive AI-powered Social-Emotional Learning platform that creates a universe of emotional intelligence for children and educators.
 
