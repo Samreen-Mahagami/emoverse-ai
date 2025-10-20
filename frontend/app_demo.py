@@ -2215,8 +2215,28 @@ def complete_text_extraction(uploaded_file):
                         extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nThis PDF has been uploaded successfully. The document appears to contain images or formatted content that will be processed to create your learning materials."
                 
                 except Exception as pdf_error:
-                    # PDF processing failed - show error message
-                    extracted_text = f"📄 Document: {uploaded_file.name}\n\nCould not extract text from this PDF. The document may contain images or be password-protected. Please try a different file or contact support."
+                    # PDF processing failed - log the actual error for debugging
+                    import traceback
+                    error_details = traceback.format_exc()
+                    st.error(f"PDF Error: {str(pdf_error)}")
+                    st.code(error_details)
+                    
+                    # Try one more time with basic PyPDF2
+                    try:
+                        import PyPDF2
+                        uploaded_file.seek(0)
+                        pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                        
+                        for page_num in range(len(pdf_reader.pages)):
+                            page = pdf_reader.pages[page_num]
+                            page_text = page.extract_text()
+                            if page_text and page_text.strip():
+                                extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                        
+                        if not extracted_text.strip():
+                            extracted_text = f"📄 Document: {uploaded_file.name}\n\nPDF uploaded but contains no extractable text. It may be image-based."
+                    except Exception as fallback_error:
+                        extracted_text = f"📄 Document: {uploaded_file.name}\n\nCould not extract text from this PDF. Error: {str(fallback_error)}"
             
             # For images, use AWS Textract (synchronous - fast!)
             elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
