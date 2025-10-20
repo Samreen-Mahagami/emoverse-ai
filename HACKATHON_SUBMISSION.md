@@ -445,49 +445,6 @@ Total: $55-60/month
 
 ---
 
-## 🎯 Hackathon Judging Criteria
-
-### Innovation ⭐⭐⭐⭐⭐
-- Multi-agent orchestration with intelligent fallback
-- 3-tier adaptive content generation
-- Long-term memory for personalization
-- Novel async architecture
-
-### Technical Implementation ⭐⭐⭐⭐⭐
-- 10 Lambda functions
-- 6 AI agents
-- 3 AWS AI services (Bedrock, Textract, Comprehend)
-- Production-ready infrastructure
-
-### AWS Service Usage ⭐⭐⭐⭐⭐
-- Bedrock (Claude Sonnet 4.5) - Core AI
-- Lambda - Serverless compute
-- DynamoDB - Data persistence
-- S3 - Storage
-- Textract - OCR
-- Comprehend - NLP
-- Text Processing - Q&A
-- API Gateway - REST API
-- CloudWatch - Monitoring
-- SAM/CloudFormation - IaC
-
-### Impact & Usefulness ⭐⭐⭐⭐⭐
-- Saves teachers 2-3 hours per lesson
-- Personalizes learning for students
-- Tracks emotional growth
-- Scalable to thousands of schools
-
-### Completeness ⭐⭐⭐⭐⭐
-- Fully functional frontend
-- Complete backend
-- Real document processing
-- Production deployment
-- Comprehensive documentation
-- Budget optimization
-- Monitoring and alerts
-
----
-
 ## 📚 Repository Structure
 
 ```
