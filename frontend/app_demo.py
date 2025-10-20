@@ -404,7 +404,7 @@ st.markdown("""
     .stButton > button[kind="primary"],
     .stButton > button[kind="secondary"] {
         padding: 50px 60px !important;
-        font-size: 3.8em !important;
+        font-size: 2.5em !important;
         height: 180px !important;
         border-radius: 12px !important;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2) !important;
