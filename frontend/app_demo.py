@@ -2167,11 +2167,7 @@ def complete_text_extraction(uploaded_file):
                             total_pages = len(pdf.pages)
                             
                             # Process ALL pages for children's educational content - OPTIMIZED
-                            file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
-                            max_pages = total_pages  # Process ALL pages
-                            
-                            # Fast processing without detailed progress messages
-                            pages_to_process = max_pages
+                            pages_to_process = total_pages
                             
                             # Optimized batch processing for speed
                             for page_num in range(pages_to_process):
@@ -2192,32 +2188,27 @@ def complete_text_extraction(uploaded_file):
                         # Reset file pointer to beginning
                         uploaded_file.seek(0)
                         pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                    
-                    total_pages = len(pdf_reader.pages)
-                    
-                    # Process ALL pages for complete children's educational content - FAST
-                    file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
-                    max_pages = total_pages  # Always process ALL pages
-                    
-                    pages_to_process = max_pages  # Process ALL pages
-                    
-                    # Fast processing without progress messages
-                    for page_num in range(pages_to_process):
-                        try:
-                            page = pdf_reader.pages[page_num]
-                            page_text = page.extract_text()
-                            
-                            if page_text.strip():
-                                # Always include page numbers for children's books
-                                extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
-                            else:
-                                # Even if no text, mark the page for completeness
-                                extracted_text += f"Page {page_num + 1}: [Image or no text content]\n\n"
+                        
+                        total_pages = len(pdf_reader.pages)
+                        pages_to_process = total_pages
+                        
+                        # Fast processing without progress messages
+                        for page_num in range(pages_to_process):
+                            try:
+                                page = pdf_reader.pages[page_num]
+                                page_text = page.extract_text()
                                 
-                        except Exception as e:
-                            # Log error but continue processing all pages
-                            extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
-                            continue
+                                if page_text.strip():
+                                    # Always include page numbers for children's books
+                                    extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                                else:
+                                    # Even if no text, mark the page for completeness
+                                    extracted_text += f"Page {page_num + 1}: [Image or no text content]\n\n"
+                                    
+                            except Exception as e:
+                                # Log error but continue processing all pages
+                                extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                                continue
                     
                     # If no text was extracted from PDF
                     if not extracted_text.strip():
