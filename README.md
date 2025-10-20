@@ -28,7 +28,7 @@ A comprehensive serverless platform that combines AWS AI services, Claude Sonnet
 - ✅ **Interactive Quizzes**: Auto-generated quizzes to reinforce learning
 
 ### For Teachers
-- 📝 **Auto Lesson Plans**: Generate 30-45 minute structured lesson plans instantly
+- 📝 **Auto Lesson Plans**: Generate 30-60 minute structured lesson plans instantly
 - 📊 **Student Analytics**: Track performance, emotional trends, and engagement
 
 ### System Intelligence
