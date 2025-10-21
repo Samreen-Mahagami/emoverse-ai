@@ -1993,8 +1993,8 @@ def main():
         # Better centered button layout
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            # Create two columns for the buttons within the centered area
-            btn_col1, btn_col2 = st.columns(2)
+            # Create two columns for the buttons within the centered area with gap
+            btn_col1, gap, btn_col2 = st.columns([1, 0.2, 1])
         
             with btn_col1:
                 # Student button - enhanced
