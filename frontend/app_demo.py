@@ -3778,23 +3778,9 @@ def teacher_interface():
         col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             if st.button("🚪 Logout", use_container_width=True, key="teacher_logout_btn"):
-                # Check if lesson plan is being generated
-                if st.session_state.get('generating_lesson_plan', False):
-                    st.warning("⚠️ Lesson plan is currently being generated. Logging out will cancel the process.")
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        if st.button("✅ Yes, Logout", use_container_width=True, key="confirm_logout"):
-                            st.session_state.generating_lesson_plan = False
-                            st.session_state.user_type = None
-                            st.session_state.teacher_id = None
-                            st.rerun()
-                    with col_b:
-                        if st.button("❌ Cancel", use_container_width=True, key="cancel_logout"):
-                            st.rerun()
-                else:
-                    st.session_state.user_type = None
-                    st.session_state.teacher_id = None
-                    st.rerun()
+                st.session_state.user_type = None
+                st.session_state.teacher_id = None
+                st.rerun()
 
 def display_lesson_plan(plan):
     """Display lesson plan with all sections"""
