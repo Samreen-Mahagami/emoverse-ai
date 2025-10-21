@@ -36,9 +36,9 @@ st.set_page_config(
 # Custom CSS for fun, colorful design
 st.markdown("""
 <style>
-    /* Main background with gradient */
+    /* Main background with gradient - Nature Green + Soft Yellow */
     .stApp {
-        background: linear-gradient(135deg, #4A90E2 0%, #FF6B6B 25%, #FFA07A 50%, #4A90E2 75%, #FF6B6B 100%);
+        background: linear-gradient(135deg, #7CB342 0%, #FFF59D 25%, #AED581 50%, #F9FBE7 75%, #9CCC65 100%);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
     }
@@ -81,7 +81,7 @@ st.markdown("""
     /* Enhanced File Uploader Styling */
     .stFileUploader > div > div > div > div {
         padding: 25px !important;
-        border: 3px dashed #4A90E2 !important;
+        border: 3px dashed #7CB342 !important;
         border-radius: 15px !important;
         background: rgba(255, 255, 255, 0.9) !important;
         min-height: 120px !important;
@@ -90,7 +90,7 @@ st.markdown("""
     .stFileUploader > div > div > div > div > div {
         font-size: 1.3em !important;
         font-weight: 600 !important;
-        color: #4A90E2 !important;
+        color: #558B2F !important;
     }
     
     .stFileUploader label {
@@ -185,8 +185,8 @@ st.markdown("""
     }
     
     .stTextInput input:focus {
-        border-color: #4A90E2 !important;
-        box-shadow: 0 0 10px rgba(74, 144, 226, 0.3) !important;
+        border-color: #7CB342 !important;
+        box-shadow: 0 0 10px rgba(124, 179, 66, 0.3) !important;
     }
     
     /* Hide "Press Enter to apply" hint */
@@ -306,7 +306,7 @@ st.markdown("""
     
     /* Sidebar styling - Normal scrolling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #4A90E2 0%, #FF6B6B 100%);
+        background: linear-gradient(180deg, #7CB342 0%, #FFF59D 100%);
         border-radius: 0 20px 20px 0;
     }
     
@@ -317,7 +317,7 @@ st.markdown("""
     
     /* Mobile hamburger menu - Make it more visible */
     [data-testid="collapsedControl"] {
-        background-color: rgba(74, 144, 226, 0.9) !important;
+        background-color: rgba(124, 179, 66, 0.9) !important;
         border-radius: 8px !important;
         padding: 8px !important;
         margin: 10px !important;
@@ -387,14 +387,14 @@ st.markdown("""
     }
     
     .stButton > button {
-        background: linear-gradient(135deg, #4A90E2 0%, #FF6B6B 100%);
+        background: linear-gradient(135deg, #7CB342 0%, #FFF59D 100%);
         color: white;
         border: none;
         border-radius: 8px;
         padding: 16px 32px;
         font-size: 1.2rem;
         font-weight: 700;
-        box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+        box-shadow: 0 4px 15px rgba(124, 179, 66, 0.3);
         transition: all 0.3s ease;
         cursor: pointer;
         line-height: 1.5;
@@ -406,7 +406,7 @@ st.markdown("""
     
     .stButton > button:hover {
         transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        box-shadow: 0 6px 20px rgba(124, 179, 66, 0.4);
     }
     
     /* User selection buttons - clean and aligned */
@@ -423,11 +423,11 @@ st.markdown("""
     }
     
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+        background: linear-gradient(135deg, #7CB342 0%, #FFF59D 100%) !important;
     }
     
     .stButton > button[kind="secondary"] {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+        background: linear-gradient(135deg, #9CCC65 0%, #F9FBE7 100%) !important;
     }
     
     .stButton > button[kind="primary"]:hover,
@@ -440,7 +440,7 @@ st.markdown("""
     .stTextInput > div > div > input,
     .stTextArea > div > div > textarea {
         border-radius: 15px;
-        border: 2px solid #4A90E2;
+        border: 2px solid #7CB342;
         padding: 12px;
         font-size: 1.1rem;
         line-height: 1.5;
@@ -463,8 +463,8 @@ st.markdown("""
         padding: 12px 18px;
         font-size: 0.95rem;
         font-weight: 600;
-        color: #4A90E2;
-        border: 2px solid #4A90E2;
+        color: #558B2F;
+        border: 2px solid #7CB342;
         line-height: 1.5;
         white-space: nowrap;
         flex-shrink: 1;
@@ -472,7 +472,7 @@ st.markdown("""
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #4A90E2 0%, #FF6B6B 100%);
+        background: linear-gradient(135deg, #7CB342 0%, #FFF59D 100%);
         color: white !important;
     }
     
@@ -499,7 +499,7 @@ st.markdown("""
     /* Metrics */
     [data-testid="stMetricValue"] {
         font-size: 2em;
-        color: #4A90E2;
+        color: #7CB342;
         font-weight: bold;
     }
     
@@ -508,7 +508,7 @@ st.markdown("""
         background-color: rgba(255, 255, 255, 0.9);
         border-radius: 15px;
         padding: 20px;
-        border: 3px dashed #4A90E2;
+        border: 3px dashed #7CB342;
         margin: 15px 0;
     }
     
@@ -516,7 +516,7 @@ st.markdown("""
     
     /* Main expander container */
     [data-testid="stExpander"] {
-        border: 2px solid rgba(74, 144, 226, 0.3) !important;
+        border: 2px solid rgba(124, 179, 66, 0.3) !important;
         border-radius: 12px !important;
         margin: 20px 0 !important;
         background: white !important;
@@ -525,7 +525,7 @@ st.markdown("""
     
     /* Expander header */
     .streamlit-expanderHeader {
-        background-color: rgba(74, 144, 226, 0.1) !important;
+        background-color: rgba(124, 179, 66, 0.1) !important;
         padding: 20px !important;
         min-height: 70px !important;
         display: block !important;
@@ -610,13 +610,13 @@ st.markdown("""
     
     /* Progress bars */
     .stProgress > div > div > div {
-        background: linear-gradient(90deg, #4A90E2 0%, #FF6B6B 100%);
+        background: linear-gradient(90deg, #7CB342 0%, #FFF59D 100%);
     }
     
     /* Selectbox */
     .stSelectbox > div > div {
         border-radius: 15px;
-        border: 2px solid #4A90E2;
+        border: 2px solid #7CB342;
     }
     
     .stSelectbox select {
@@ -2085,7 +2085,7 @@ def student_interface():
         
         # Student info banner
         st.markdown(f"""
-            <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            <div style='background: linear-gradient(135deg, #7CB342 0%, #FFF59D 100%); 
                         padding: 15px; border-radius: 15px; text-align: center; 
                         color: white; font-size: 1.1em; margin-bottom: 20px;
                         box-shadow: 0 4px 15px rgba(0,0,0,0.2);'>
@@ -2095,13 +2095,13 @@ def student_interface():
         
         # Enhanced file upload section with larger layout
         st.markdown("""
-            <div style='background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); 
+            <div style='background: linear-gradient(135deg, #C5E1A5 0%, #FFF9C4 100%); 
                         padding: 35px; border-radius: 25px; text-align: center;
                         box-shadow: 0 12px 40px rgba(0,0,0,0.15); margin: 30px 0;'>
-                <div style='font-size: 2.2em; color: #2d3748; font-weight: bold; margin-bottom: 15px;'>
+                <div style='font-size: 2.2em; color: #33691E; font-weight: bold; margin-bottom: 15px;'>
                     📚 Upload Your Learning Material
                 </div>
-                <div style='font-size: 1.4em; color: #2d3748; line-height: 1.5;'>
+                <div style='font-size: 1.4em; color: #558B2F; line-height: 1.5;'>
                     Share your learning material and get fun stories, quizzes, and activities! ✨
                 </div>
             </div>
