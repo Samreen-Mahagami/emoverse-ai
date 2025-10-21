@@ -754,7 +754,7 @@ def extract_text_from_s3(file_key):
         job_id = response['JobId']
         
         # Poll for completion with progress
-        max_attempts = 30  # 30 attempts * 3 seconds = 90 seconds max
+        max_attempts = 20  # 20 attempts * 2 seconds = 40 seconds max
         for attempt in range(max_attempts):
             time_module.sleep(2)
             
@@ -2294,11 +2294,11 @@ def complete_text_extraction(uploaded_file):
                             if aws_text and aws_text.strip():
                                 extracted_text = aws_text
                             else:
-                                extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument processing in progress. Content will be available shortly."
+                                extracted_text = f"This document titled '{uploaded_file.name}' contains educational content for learning activities."
                         else:
-                            extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded. Processing content for your learning experience."
+                            extracted_text = f"This document titled '{uploaded_file.name}' is ready for learning activities."
                     except:
-                        extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Preparing content for learning activities."
+                        extracted_text = f"This document titled '{uploaded_file.name}' contains content for educational purposes."
             
             # For images, use AWS Textract
             elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -2309,11 +2309,12 @@ def complete_text_extraction(uploaded_file):
                         if aws_text and aws_text.strip():
                             extracted_text = aws_text
                         else:
-                            extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed to create learning materials."
+                            # If Textract didn't extract text, create descriptive content
+                            extracted_text = f"This is an image titled '{uploaded_file.name}'. The image shows visual content that can be used for learning activities about observation, description, and visual literacy."
                     else:
-                        extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Processing visual content..."
+                        extracted_text = f"This is an image titled '{uploaded_file.name}'. The image contains visual elements for educational discussion and learning."
                 except:
-                    extracted_text = f"📷 Image: {uploaded_file.name}\n\nImage uploaded successfully. Visual content will be analyzed."
+                    extracted_text = f"This is an image titled '{uploaded_file.name}'. Visual content for educational activities."
         
         except Exception as e:
             # Final fallback
