@@ -1952,12 +1952,12 @@ def main():
     
     # Enhanced main title - more visible and attractive
     st.markdown("""
-        <div style='text-align: center; margin: 40px 0 60px 0; padding: 30px;
+        <div style='text-align: center; margin: 10px 0 40px 0; padding: 20px;
                     background: rgba(255, 255, 255, 0.1); 
                     border-radius: 25px; 
                     backdrop-filter: blur(10px);
                     box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
-            <h1 style='font-size: 4.5em; font-weight: 900; margin: 0 0 20px 0;
+            <h1 style='font-size: 4.5em; font-weight: 900; margin: 0 0 15px 0;
                        color: #ffffff;
                        text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
                        letter-spacing: 2px;'>
