@@ -3565,56 +3565,60 @@ def teacher_interface():
                 if not uploaded_file:
                     st.error("📎 Please upload a file first to generate a lesson plan!")
                 else:
-                    # Set processing flag
+                    # Set processing flag and rerun to disable button
                     st.session_state.generating_lesson_plan = True
-                    # Process the uploaded file to extract content
-                    with st.spinner("📖 Analyzing your uploaded content..."):
-                        try:
-                            # Extract text from uploaded file
-                            extracted_text = ""
+                    st.rerun()
+            
+            # Process if flag is set
+            if st.session_state.get('generating_lesson_plan', False) and uploaded_file:
+                # Process the uploaded file to extract content
+                with st.spinner("📖 Analyzing your uploaded content..."):
+                    try:
+                        # Extract text from uploaded file
+                        extracted_text = ""
                             
-                            if uploaded_file.name.lower().endswith('.pdf'):
-                                try:
-                                    import PyPDF2
-                                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                                    
-                                    # Extract text from first 10 pages for lesson planning
-                                    max_pages = min(10, len(pdf_reader.pages))
-                                    for page_num in range(max_pages):
-                                        try:
-                                            page_text = pdf_reader.pages[page_num].extract_text()
-                                            if page_text.strip():
-                                                extracted_text += page_text + "\n"
-                                        except:
-                                            continue
-                                except:
-                                    extracted_text = f"PDF Document: {uploaded_file.name}\nContent will be analyzed for lesson planning."
-                            
-                            elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
-                                # For images, we'll create a lesson plan based on visual content analysis
-                                extracted_text = f"Visual Content: {uploaded_file.name}\nImage-based learning material for visual analysis and discussion."
-                            
-                            if not extracted_text.strip():
-                                extracted_text = f"Educational Content: {uploaded_file.name}\nContent-based learning material for classroom instruction."
-                            
-                            # Generate content-based lesson plan using AI
-                            lesson_plan = generate_lesson_plan_from_content(extracted_text, grade_level, duration)
-                            
-                            if lesson_plan:
-                                st.success("✅ Lesson plan generated successfully!")
-                                st.info("📋 AI-generated lesson plan based on your uploaded content:")
-                                display_lesson_plan(lesson_plan)
-                            else:
-                                st.error("❌ Failed to generate lesson plan. Please try again.")
-                            
-                            # Reset processing flag
-                            st.session_state.generating_lesson_plan = False
+                        if uploaded_file.name.lower().endswith('.pdf'):
+                            try:
+                                import PyPDF2
+                                pdf_reader = PyPDF2.PdfReader(uploaded_file)
                                 
-                        except Exception as e:
-                            st.error(f"❌ Error processing file: {str(e)}")
-                            st.info("💡 Please try uploading a different file or check the file format.")
-                            # Reset processing flag on error
-                            st.session_state.generating_lesson_plan = False
+                                # Extract text from first 10 pages for lesson planning
+                                max_pages = min(10, len(pdf_reader.pages))
+                                for page_num in range(max_pages):
+                                    try:
+                                        page_text = pdf_reader.pages[page_num].extract_text()
+                                        if page_text.strip():
+                                            extracted_text += page_text + "\n"
+                                    except:
+                                        continue
+                            except:
+                                extracted_text = f"PDF Document: {uploaded_file.name}\nContent will be analyzed for lesson planning."
+                        
+                        elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                            # For images, we'll create a lesson plan based on visual content analysis
+                            extracted_text = f"Visual Content: {uploaded_file.name}\nImage-based learning material for visual analysis and discussion."
+                        
+                        if not extracted_text.strip():
+                            extracted_text = f"Educational Content: {uploaded_file.name}\nContent-based learning material for classroom instruction."
+                        
+                        # Generate content-based lesson plan using AI
+                        lesson_plan = generate_lesson_plan_from_content(extracted_text, grade_level, duration)
+                        
+                        if lesson_plan:
+                            st.success("✅ Lesson plan generated successfully!")
+                            st.info("📋 AI-generated lesson plan based on your uploaded content:")
+                            display_lesson_plan(lesson_plan)
+                        else:
+                            st.error("❌ Failed to generate lesson plan. Please try again.")
+                        
+                        # Reset processing flag
+                        st.session_state.generating_lesson_plan = False
+                            
+                    except Exception as e:
+                        st.error(f"❌ Error processing file: {str(e)}")
+                        st.info("💡 Please try uploading a different file or check the file format.")
+                        # Reset processing flag on error
+                        st.session_state.generating_lesson_plan = False
         
         with tab2:
             st.header("Student Analytics Dashboard")
