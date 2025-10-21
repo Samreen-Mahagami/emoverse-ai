@@ -2055,7 +2055,7 @@ def student_interface():
             student_id_input = st.text_input(
                 "Enter Student Name/ID", 
                 key="student_id_input", 
-                placeholder="Enter your name or ID",
+                placeholder=" your name or ID",
                 label_visibility="visible"
             )
             grade_level = st.selectbox("Select Grade Level", range(1, 11), key="grade_select")
@@ -3532,7 +3532,7 @@ def teacher_interface():
             teacher_id_input = st.text_input(
                 "Teacher Name/ID", 
                 key="teacher_id_input", 
-                placeholder="Enter your name or ID",
+                placeholder=" your name or ID",
                 label_visibility="visible"
             )
             
