@@ -2317,12 +2317,12 @@ def complete_text_extraction(uploaded_file):
                     extracted_text = f"This is an image titled '{uploaded_file.name}'. Visual content for educational activities."
         
         except Exception as e:
-            # Final fallback
-            extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Content is being prepared for your learning experience."
+            # Final fallback - create basic content
+            extracted_text = f"This is a document titled '{uploaded_file.name}' that contains educational content for learning activities and discussion."
         
-        # If no text extracted, show basic info
+        # If no text extracted, create minimal content
         if not extracted_text.strip():
-            extracted_text = f"📄 Document: {uploaded_file.name}\n\nContent uploaded and ready for learning activities."
+            extracted_text = f"This file titled '{uploaded_file.name}' is ready for educational activities."
         
         # STEP 3: SHOW TABS WITH EXTRACTED TEXT
         st.session_state.processed_content = {
