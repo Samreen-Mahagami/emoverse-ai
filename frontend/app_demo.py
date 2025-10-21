@@ -1270,30 +1270,45 @@ def generate_quiz_direct(text, grade_level):
         # Create isolated client for this user session
         bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
         
-        prompt = f"""IMPORTANT: Create quiz questions based ONLY on the actual content provided below. Do NOT use generic or demo questions.
+        # Grade-specific instructions
+        if grade_level <= 4:
+            complexity = "very simple, short questions with easy vocabulary"
+            num_questions = "10 questions (3 multiple choice, 3 true/false, 2 fill blank, 2 match pair)"
+            vocab_level = "Use simple words a young child can understand. Keep questions short (1 sentence)."
+        elif grade_level <= 7:
+            complexity = "moderate difficulty with age-appropriate vocabulary"
+            num_questions = "15 questions (4 multiple choice, 4 true/false, 4 fill blank, 3 match pair)"
+            vocab_level = "Use clear language appropriate for middle elementary students."
+        else:
+            complexity = "challenging questions with advanced vocabulary"
+            num_questions = "20 questions (5 multiple choice, 5 true/false, 5 fill blank, 5 match pair)"
+            vocab_level = "Use grade-appropriate academic vocabulary."
+        
+        prompt = f"""CRITICAL: Create quiz questions based ONLY on the ACTUAL CONTENT provided below. 
+DO NOT use generic questions. Every question MUST reference specific details from THIS document.
 
-Analyze this specific text and create 20 questions for Grade {grade_level} students:
+DOCUMENT CONTENT TO ANALYZE:
+{text[:4000]}
 
-ACTUAL DOCUMENT CONTENT:
-{text[:3000]}
+GRADE LEVEL: {grade_level}
+COMPLEXITY: {complexity}
+VOCABULARY: {vocab_level}
 
-REQUIREMENTS:
-1. Read the text carefully and create questions about SPECIFIC content, characters, events, and concepts mentioned
-2. Use actual names, places, and details from the text
-3. Questions must be answerable ONLY by reading this specific document
-4. Grade {grade_level} appropriate vocabulary and complexity
-5. Create exactly 20 questions (5 of each type):
-   - 5 Multiple Choice Questions about specific content
-   - 5 True/False Questions about actual facts from the text
-   - 5 Fill in the Blanks using actual words/names from the text
-   - 5 Match the Pair connecting real concepts from the document
+CREATE {num_questions} based on SPECIFIC content from the document above.
 
-CONTENT ANALYSIS INSTRUCTIONS:
-- Identify main characters, settings, themes from the actual text
-- Use specific details, quotes, and facts from the document
-- Ask about plot points, character actions, and key messages
-- Reference actual events and outcomes described in the text
-- Include specific vocabulary and terms used in the document
+STRICT REQUIREMENTS:
+1. Read the text carefully - identify actual characters, events, places, concepts
+2. Use REAL names, details, and facts from THIS specific document
+3. Questions must be answerable ONLY by someone who read THIS text
+4. Reference specific plot points, character actions, and key messages from the document
+5. Include actual vocabulary and terms used in the text
+6. For Grade {grade_level}: {vocab_level}
+
+QUESTION TYPES:
+- Multiple Choice: Ask about specific events, characters, or concepts from the text
+- True/False: Test understanding of actual facts and details from the document
+- Fill in the Blank: Use actual names, places, or key terms from the text
+- Match the Pair: Connect real concepts, characters, or events from the document
 
 Format as JSON:
 {{
