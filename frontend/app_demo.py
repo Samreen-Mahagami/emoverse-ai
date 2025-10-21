@@ -36,9 +36,9 @@ st.set_page_config(
 # Custom CSS for fun, colorful design
 st.markdown("""
 <style>
-    /* Main background with gradient - Green to Yellow Theme */
+    /* Main background with gradient - Purple to Pink Theme */
     .stApp {
-        background: linear-gradient(135deg, #90EE90 0%, #B8E986 25%, #D4E67C 50%, #F0E372 75%, #FFF59D 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #667eea 100%);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
     }
@@ -73,7 +73,7 @@ st.markdown("""
     }
     
     .stApp {
-        background: linear-gradient(135deg, #90EE90 0%, #B8E986 25%, #D4E67C 50%, #F0E372 75%, #FFF59D 100%) !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #667eea 100%) !important;
         background-size: 400% 400% !important;
         animation: gradient 15s ease infinite !important;
     }
@@ -387,14 +387,14 @@ st.markdown("""
     }
     
     .stButton > button {
-        background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);
+        background: linear-gradient(135deg, #4A90E2 0%, #FF6B6B 100%);
         color: white;
         border: none;
         border-radius: 8px;
         padding: 16px 32px;
         font-size: 1.2rem;
         font-weight: 700;
-        box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+        box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
         transition: all 0.3s ease;
         cursor: pointer;
         line-height: 1.5;
@@ -423,11 +423,11 @@ st.markdown("""
     }
     
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%) !important;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
     }
     
     .stButton > button[kind="secondary"] {
-        background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%) !important;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
     }
     
     .stButton > button[kind="primary"]:hover,
