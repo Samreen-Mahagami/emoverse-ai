@@ -2102,11 +2102,14 @@ def student_interface():
             st.markdown("<br>", unsafe_allow_html=True)
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
+                # Disable button if processing
+                is_processing = st.session_state.get('processing_file', False)
                 process_button = st.button(
                     "✨ Create My Learning Content!", 
                     use_container_width=True,
                     type="primary",
-                    key="main_process_btn"
+                    key="main_process_btn",
+                    disabled=is_processing
                 )
 
         
