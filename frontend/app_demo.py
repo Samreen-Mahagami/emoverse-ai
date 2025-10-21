@@ -1970,7 +1970,7 @@ def main():
     
     # Enhanced main title - more visible and attractive
     st.markdown("""
-        <div style='text-align: center; margin: 10px 0 40px 0; padding: 20px;
+        <div style='text-align: center; margin: 0 0 40px 0; padding: 20px;
                     background: rgba(255, 255, 255, 0.1); 
                     border-radius: 25px; 
                     backdrop-filter: blur(10px);
