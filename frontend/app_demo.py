@@ -38,7 +38,7 @@ st.markdown("""
 <style>
     /* Main background with gradient */
     .stApp {
-        background: linear-gradient(135deg, #a8c0ff 0%, #c2e9fb 25%, #fbc2eb 50%, #a6c1ee 75%, #fbc2eb 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
     }
@@ -73,7 +73,7 @@ st.markdown("""
     }
     
     .stApp {
-        background: linear-gradient(135deg, #a8c0ff 0%, #c2e9fb 25%, #fbc2eb 50%, #a6c1ee 75%, #fbc2eb 100%) !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%) !important;
         background-size: 400% 400% !important;
         animation: gradient 15s ease infinite !important;
     }
@@ -81,7 +81,7 @@ st.markdown("""
     /* Enhanced File Uploader Styling */
     .stFileUploader > div > div > div > div {
         padding: 25px !important;
-        border: 3px dashed #a8c0ff !important;
+        border: 3px dashed #667eea !important;
         border-radius: 15px !important;
         background: rgba(255, 255, 255, 0.9) !important;
         min-height: 120px !important;
@@ -90,7 +90,7 @@ st.markdown("""
     .stFileUploader > div > div > div > div > div {
         font-size: 1.3em !important;
         font-weight: 600 !important;
-        color: #a8c0ff !important;
+        color: #667eea !important;
     }
     
     .stFileUploader label {
@@ -185,8 +185,8 @@ st.markdown("""
     }
     
     .stTextInput input:focus {
-        border-color: #a8c0ff !important;
-        box-shadow: 0 0 10px rgba(168, 192, 255, 0.3) !important;
+        border-color: #667eea !important;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.3) !important;
     }
     
     /* Colorful headers - Slightly larger */
@@ -297,7 +297,7 @@ st.markdown("""
     
     /* Sidebar styling - Normal scrolling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #a8c0ff 0%, #fbc2eb 100%);
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
         border-radius: 0 20px 20px 0;
     }
     
@@ -308,7 +308,7 @@ st.markdown("""
     
     /* Mobile hamburger menu - Make it more visible */
     [data-testid="collapsedControl"] {
-        background-color: rgba(168, 192, 255, 0.9) !important;
+        background-color: rgba(102, 126, 234, 0.9) !important;
         border-radius: 8px !important;
         padding: 8px !important;
         margin: 10px !important;
@@ -378,14 +378,14 @@ st.markdown("""
     }
     
     .stButton > button {
-        background: linear-gradient(135deg, #a8c0ff 0%, #fbc2eb 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
         border-radius: 8px;
         padding: 16px 32px;
         font-size: 1.2rem;
         font-weight: 700;
-        box-shadow: 0 4px 15px rgba(168, 192, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         transition: all 0.3s ease;
         cursor: pointer;
         line-height: 1.5;
@@ -397,7 +397,7 @@ st.markdown("""
     
     .stButton > button:hover {
         transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(168, 192, 255, 0.4);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
     
     /* User selection buttons - clean and aligned */
@@ -431,7 +431,7 @@ st.markdown("""
     .stTextInput > div > div > input,
     .stTextArea > div > div > textarea {
         border-radius: 15px;
-        border: 2px solid #a8c0ff;
+        border: 2px solid #667eea;
         padding: 12px;
         font-size: 1.1rem;
         line-height: 1.5;
@@ -454,8 +454,8 @@ st.markdown("""
         padding: 12px 18px;
         font-size: 0.95rem;
         font-weight: 600;
-        color: #a8c0ff;
-        border: 2px solid #a8c0ff;
+        color: #667eea;
+        border: 2px solid #667eea;
         line-height: 1.5;
         white-space: nowrap;
         flex-shrink: 1;
@@ -463,7 +463,7 @@ st.markdown("""
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #a8c0ff 0%, #fbc2eb 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white !important;
     }
     
@@ -484,13 +484,13 @@ st.markdown("""
     /* Info boxes */
     .stAlert {
         border-radius: 15px;
-        border-left: 5px solid #a8c0ff;
+        border-left: 5px solid #667eea;
     }
     
     /* Metrics */
     [data-testid="stMetricValue"] {
         font-size: 2em;
-        color: #a8c0ff;
+        color: #667eea;
         font-weight: bold;
     }
     
@@ -499,7 +499,7 @@ st.markdown("""
         background-color: rgba(255, 255, 255, 0.9);
         border-radius: 15px;
         padding: 20px;
-        border: 3px dashed #a8c0ff;
+        border: 3px dashed #667eea;
         margin: 15px 0;
     }
     
@@ -507,7 +507,7 @@ st.markdown("""
     
     /* Main expander container */
     [data-testid="stExpander"] {
-        border: 2px solid rgba(168, 192, 255, 0.3) !important;
+        border: 2px solid rgba(102, 126, 234, 0.3) !important;
         border-radius: 12px !important;
         margin: 20px 0 !important;
         background: white !important;
@@ -516,7 +516,7 @@ st.markdown("""
     
     /* Expander header */
     .streamlit-expanderHeader {
-        background-color: rgba(168, 192, 255, 0.1) !important;
+        background-color: rgba(102, 126, 234, 0.1) !important;
         padding: 20px !important;
         min-height: 70px !important;
         display: block !important;
@@ -601,13 +601,13 @@ st.markdown("""
     
     /* Progress bars */
     .stProgress > div > div > div {
-        background: linear-gradient(90deg, #a8c0ff 0%, #fbc2eb 100%);
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
     }
     
     /* Selectbox */
     .stSelectbox > div > div {
         border-radius: 15px;
-        border: 2px solid #a8c0ff;
+        border: 2px solid #667eea;
     }
     
     .stSelectbox select {
