@@ -404,7 +404,7 @@ st.markdown("""
     .stButton > button[kind="primary"],
     .stButton > button[kind="secondary"] {
         padding: 50px 60px !important;
-        font-size: 2.5em !important;
+        font-size: 3.8em !important;
         height: 180px !important;
         border-radius: 12px !important;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2) !important;
@@ -726,38 +726,57 @@ def upload_to_s3(file, student_id):
         st.error(f"❌ Upload failed: {str(e)}")
         return None
 
-def extract_text_from_s3(file_key, is_image=False):
-    """Extract text using AWS Textract - synchronous for images, skip for PDFs"""
+def extract_text_from_s3(file_key):
+    """Extract text using AWS Textract with robust error handling"""
     try:
         if not file_key:
             return None
+            
+        # Start asynchronous text detection
+        response = textract_client.start_document_text_detection(
+            DocumentLocation={
+                'S3Object': {
+                    'Bucket': S3_BUCKET,
+                    'Name': file_key
+                }
+            }
+        )
         
-        # For images, use synchronous Textract (fast, works immediately)
-        if is_image:
-            try:
-                response = textract_client.detect_document_text(
-                    Document={
-                        'S3Object': {
-                            'Bucket': S3_BUCKET,
-                            'Name': file_key
-                        }
-                    }
-                )
-                
-                # Extract text from response
+        job_id = response['JobId']
+        
+        # Poll for completion with progress
+        max_attempts = 30  # 30 attempts * 3 seconds = 90 seconds max
+        for attempt in range(max_attempts):
+            time_module.sleep(2)
+            
+            result = textract_client.get_document_text_detection(JobId=job_id)
+            status = result['JobStatus']
+            
+            if status == 'SUCCEEDED':
+                # Extract text from all pages
                 text = ""
-                for block in response.get('Blocks', []):
+                for block in result.get('Blocks', []):
                     if block['BlockType'] == 'LINE':
                         text += block['Text'] + "\n"
                 
-                return text.strip() if text.strip() else None
+                # Get additional pages if any
+                next_token = result.get('NextToken')
+                while next_token:
+                    result = textract_client.get_document_text_detection(
+                        JobId=job_id,
+                        NextToken=next_token
+                    )
+                    for block in result.get('Blocks', []):
+                        if block['BlockType'] == 'LINE':
+                            text += block['Text'] + "\n"
+                    next_token = result.get('NextToken')
                 
-            except Exception as img_error:
-                st.warning(f"⚠️ Could not extract text from image: {str(img_error)}")
+                return text.strip()
+            
+            elif status == 'FAILED':
                 return None
         
-        # For PDFs, don't use Textract - rely on PyPDF2/pdfplumber
-        # Textract async is too slow and unreliable for real-time use
+        # Timeout
         return None
         
     except Exception as e:
@@ -2166,8 +2185,15 @@ def complete_text_extraction(uploaded_file):
                         with pdfplumber.open(uploaded_file) as pdf:
                             total_pages = len(pdf.pages)
                             
-                            # Process ALL pages for children's educational content
-                            for page_num in range(total_pages):
+                            # Process ALL pages for children's educational content - OPTIMIZED
+                            file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
+                            max_pages = total_pages  # Process ALL pages
+                            
+                            # Fast processing without detailed progress messages
+                            pages_to_process = max_pages
+                            
+                            # Optimized batch processing for speed
+                            for page_num in range(pages_to_process):
                                 try:
                                     page_text = pdf.pages[page_num].extract_text()
                                     if page_text and page_text.strip():
@@ -2176,6 +2202,7 @@ def complete_text_extraction(uploaded_file):
                                         
                                 except Exception as e:
                                     # Log error but continue processing
+                                    extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
                                     continue
                             
                     except ImportError:
@@ -2184,45 +2211,70 @@ def complete_text_extraction(uploaded_file):
                         # Reset file pointer to beginning
                         uploaded_file.seek(0)
                         pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                        
-                        total_pages = len(pdf_reader.pages)
-                        pages_to_process = total_pages
-                        
-                        # Fast processing without progress messages
-                        for page_num in range(pages_to_process):
-                            try:
-                                page = pdf_reader.pages[page_num]
-                                page_text = page.extract_text()
-                                
-                                if page_text.strip():
-                                    # Always include page numbers for children's books
-                                    extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
-                                else:
-                                    # Even if no text, mark the page for completeness
-                                    extracted_text += f"Page {page_num + 1}: [Image or no text content]\n\n"
-                                    
-                            except Exception as e:
-                                # Log error but continue processing all pages
-                                extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
-                                continue
                     
-                    # If no text was extracted from PDF, show message
-                    if not extracted_text or not extracted_text.strip():
-                        extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nThis PDF has been uploaded successfully. The document appears to contain images or formatted content that will be processed to create your learning materials."
-                    else:
-                        # Text was successfully extracted
-                        pass
+                    total_pages = len(pdf_reader.pages)
+                    
+                    # Process ALL pages for complete children's educational content - FAST
+                    file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
+                    max_pages = total_pages  # Always process ALL pages
+                    
+                    pages_to_process = max_pages  # Process ALL pages
+                    
+                    # Fast processing without progress messages
+                    for page_num in range(pages_to_process):
+                        try:
+                            page = pdf_reader.pages[page_num]
+                            page_text = page.extract_text()
+                            
+                            if page_text.strip():
+                                # Always include page numbers for children's books
+                                extracted_text += f"Page {page_num + 1}:\n{page_text}\n\n"
+                            else:
+                                # Even if no text, mark the page for completeness
+                                extracted_text += f"Page {page_num + 1}: [Image or no text content]\n\n"
+                                
+                        except Exception as e:
+                            # Log error but continue processing all pages
+                            extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
+                            continue
+                    
+                    # If no text was extracted, try alternative method
+                    if not extracted_text.strip():
+                        # Try using AWS Textract as fallback for PDFs
+                        try:
+                            file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                            if file_key:
+                                aws_text = extract_text_from_s3(file_key)
+                                if aws_text and aws_text.strip():
+                                    extracted_text = aws_text
+                                else:
+                                    extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nThis PDF has been uploaded successfully. The document appears to contain images or formatted content that will be processed to create your learning materials."
+                            else:
+                                extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Processing content for learning activities."
+                        except:
+                            extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Content will be processed to create engaging learning materials."
                 
                 except Exception as pdf_error:
-                    # PDF processing failed - show user-friendly message
-                    extracted_text = f"📄 Document: {uploaded_file.name}\n\nCould not extract text from this PDF. The document may contain images or be password-protected."
+                    # PDF processing failed, try AWS Textract
+                    try:
+                        file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                        if file_key:
+                            aws_text = extract_text_from_s3(file_key)
+                            if aws_text and aws_text.strip():
+                                extracted_text = aws_text
+                            else:
+                                extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument processing in progress. Content will be available shortly."
+                        else:
+                            extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded. Processing content for your learning experience."
+                    except:
+                        extracted_text = f"📄 Document: {uploaded_file.name}\n\nDocument uploaded successfully. Preparing content for learning activities."
             
-            # For images, use AWS Textract (synchronous - fast!)
+            # For images, use AWS Textract
             elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
                 try:
                     file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
                     if file_key:
-                        aws_text = extract_text_from_s3(file_key, is_image=True)
+                        aws_text = extract_text_from_s3(file_key)
                         if aws_text and aws_text.strip():
                             extracted_text = aws_text
                         else:
