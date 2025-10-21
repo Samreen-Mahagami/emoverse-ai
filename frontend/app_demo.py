@@ -736,7 +736,7 @@ def upload_to_s3(file, student_id):
         return None
 
 def extract_text_from_s3(file_key):
-    """Extract text using AWS Textract with robust error handling"""
+    """Extract text using AWS Textract - optimized for speed (target: under 30 seconds)"""
     try:
         if not file_key:
             return None
@@ -753,17 +753,27 @@ def extract_text_from_s3(file_key):
         
         job_id = response['JobId']
         
-        # Poll for completion with progress - increased for better success rate
-        max_attempts = 45  # 45 attempts * 2 seconds = 90 seconds max
+        # Aggressive fast polling - target under 30 seconds
+        max_attempts = 35  # Maximum 35 attempts
+        
         for attempt in range(max_attempts):
-            time_module.sleep(2)
+            # Very aggressive polling for speed
+            if attempt < 3:
+                time_module.sleep(0.5)  # First 1.5 seconds: poll every 0.5 seconds
+            elif attempt < 10:
+                time_module.sleep(1)  # Next 7 seconds: poll every 1 second
+            elif attempt < 20:
+                time_module.sleep(1.5)  # Next 15 seconds: poll every 1.5 seconds
+            else:
+                time_module.sleep(2)  # After 23.5 seconds: poll every 2 seconds
             
             result = textract_client.get_document_text_detection(JobId=job_id)
             status = result['JobStatus']
             
             if status == 'SUCCEEDED':
-                # Extract text from all pages
+                # Extract text from all pages - optimized
                 text = ""
+                
                 for block in result.get('Blocks', []):
                     if block['BlockType'] == 'LINE':
                         text += block['Text'] + "\n"
@@ -780,12 +790,12 @@ def extract_text_from_s3(file_key):
                             text += block['Text'] + "\n"
                     next_token = result.get('NextToken')
                 
-                return text.strip()
+                return text.strip() if text.strip() else None
             
             elif status == 'FAILED':
                 return None
         
-        # Timeout
+        # Timeout after ~45 seconds max
         return None
         
     except Exception as e:
@@ -2263,91 +2273,64 @@ def complete_text_extraction(uploaded_file):
                             extracted_text += f"Page {page_num + 1}: [Could not extract text]\n\n"
                             continue
                     
-                    # If no text was extracted, try alternative method
+                    # If no text was extracted, try AWS Textract
                     if not extracted_text.strip():
-                        # Try using AWS Textract as fallback for PDFs
-                        try:
-                            file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
-                            if file_key:
-                                aws_text = extract_text_from_s3(file_key)
-                                if aws_text and aws_text.strip():
-                                    extracted_text = aws_text
-                                else:
-                                    extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nThis PDF has been uploaded successfully. The document appears to contain images or formatted content that will be processed to create your learning materials."
-                            else:
-                                extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Processing content for learning activities."
-                        except:
-                            extracted_text = f"📄 PDF Document: {uploaded_file.name}\n\nPDF uploaded successfully. Content will be processed to create engaging learning materials."
+                        uploaded_file.seek(0)
+                        file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                        if file_key:
+                            aws_text = extract_text_from_s3(file_key)
+                            if aws_text:
+                                extracted_text = aws_text
                 
                 except Exception as pdf_error:
                     # PDF processing failed, try AWS Textract
-                    try:
-                        file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
-                        if file_key:
-                            aws_text = extract_text_from_s3(file_key)
-                            if aws_text and aws_text.strip():
-                                extracted_text = aws_text
-                            else:
-                                extracted_text = f"This document titled '{uploaded_file.name}' contains educational content for learning activities."
-                        else:
-                            extracted_text = f"This document titled '{uploaded_file.name}' is ready for learning activities."
-                    except:
-                        extracted_text = f"This document titled '{uploaded_file.name}' contains content for educational purposes."
+                    uploaded_file.seek(0)
+                    file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                    if file_key:
+                        aws_text = extract_text_from_s3(file_key)
+                        if aws_text:
+                            extracted_text = aws_text
             
-            # For images, use FAST local OCR first, then fallback to AWS Textract
+            # For images, use AWS Textract
             elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
                 try:
-                    # Try fast local OCR with pytesseract (5-15 seconds)
-                    try:
-                        import pytesseract
-                        from PIL import Image
-                        
-                        # Reset file pointer
+                    # Try fast local OCR with pytesseract first
+                    import pytesseract
+                    from PIL import Image
+                    
+                    uploaded_file.seek(0)
+                    image = Image.open(uploaded_file)
+                    extracted_text = pytesseract.image_to_string(image)
+                    
+                    if not extracted_text or not extracted_text.strip():
+                        # Use AWS Textract if Tesseract fails
                         uploaded_file.seek(0)
-                        image = Image.open(uploaded_file)
-                        
-                        # Extract text using Tesseract (FAST!)
-                        extracted_text = pytesseract.image_to_string(image)
-                        
-                        if extracted_text and extracted_text.strip():
-                            # Success with fast OCR!
-                            pass
-                        else:
-                            # No text found, try AWS Textract as fallback
-                            raise Exception("No text found with Tesseract")
-                            
-                    except ImportError:
-                        # Tesseract not available, use AWS Textract
                         file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
                         if file_key:
                             aws_text = extract_text_from_s3(file_key)
-                            if aws_text and aws_text.strip():
+                            if aws_text:
                                 extracted_text = aws_text
-                            else:
-                                extracted_text = f"This is an image titled '{uploaded_file.name}'. The image shows visual content for learning activities."
-                        else:
-                            extracted_text = f"This is an image titled '{uploaded_file.name}'. Visual content for educational discussion."
-                    except Exception as e:
-                        # Tesseract failed, try AWS Textract
-                        file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
-                        if file_key:
-                            aws_text = extract_text_from_s3(file_key)
-                            if aws_text and aws_text.strip():
-                                extracted_text = aws_text
-                            else:
-                                extracted_text = f"This is an image titled '{uploaded_file.name}'. Visual content for learning."
-                        else:
-                            extracted_text = f"This is an image titled '{uploaded_file.name}'. Educational visual content."
-                except:
-                    extracted_text = f"This is an image titled '{uploaded_file.name}'. Visual content for activities."
+                        
+                except (ImportError, Exception):
+                    # Tesseract not available or failed, use AWS Textract
+                    uploaded_file.seek(0)
+                    file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                    if file_key:
+                        aws_text = extract_text_from_s3(file_key)
+                        if aws_text:
+                            extracted_text = aws_text
         
         except Exception as e:
-            # Final fallback - create basic content
-            extracted_text = f"This is a document titled '{uploaded_file.name}' that contains educational content for learning activities and discussion."
-        
-        # If no text extracted, create minimal content
-        if not extracted_text.strip():
-            extracted_text = f"This file titled '{uploaded_file.name}' is ready for educational activities."
+            # If extraction completely fails, try one more time with Textract
+            try:
+                uploaded_file.seek(0)
+                file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                if file_key:
+                    aws_text = extract_text_from_s3(file_key)
+                    if aws_text:
+                        extracted_text = aws_text
+            except:
+                pass
         
         # STEP 3: SHOW TABS WITH EXTRACTED TEXT
         st.session_state.processed_content = {
