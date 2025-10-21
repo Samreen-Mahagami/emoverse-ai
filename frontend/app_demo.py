@@ -1392,16 +1392,10 @@ IMPORTANT: Create exactly 5 questions of EACH type (20 total). Mix them througho
             if quiz_data and 'questions' in quiz_data and len(quiz_data['questions']) > 0:
                 return quiz_data
             else:
-                # Only fallback if quiz is completely empty
-                print(f"WARNING: Claude returned empty quiz, using fallback")
                 return create_content_specific_quiz(text, grade_level)
         except Exception as parse_error:
-            # Create content-specific quiz based on the actual text
-            print(f"WARNING: Could not parse Claude quiz response: {str(parse_error)}")
-            print(f"Claude response preview: {quiz_text[:500]}")
             return create_content_specific_quiz(text, grade_level)
     except Exception as e:
-        print(f"ERROR: Bedrock call failed: {str(e)}")
         return create_content_specific_quiz(text, grade_level)
 
 def generate_story_direct(text, grade_level):
