@@ -2142,6 +2142,12 @@ def student_interface():
 
         
         if uploaded_file and process_button:
+            # Clear old quiz and content when new document is uploaded
+            if hasattr(st.session_state, 'direct_quiz'):
+                delattr(st.session_state, 'direct_quiz')
+            st.session_state.quiz = None
+            st.session_state.processed_content = None
+            
             # Check file size and warn user about large files
             file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Size in MB
             
@@ -2300,21 +2306,52 @@ def complete_text_extraction(uploaded_file):
                     except:
                         extracted_text = f"This document titled '{uploaded_file.name}' contains content for educational purposes."
             
-            # For images, use AWS Textract
+            # For images, use FAST local OCR first, then fallback to AWS Textract
             elif uploaded_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
                 try:
-                    file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
-                    if file_key:
-                        aws_text = extract_text_from_s3(file_key)
-                        if aws_text and aws_text.strip():
-                            extracted_text = aws_text
+                    # Try fast local OCR with pytesseract (5-15 seconds)
+                    try:
+                        import pytesseract
+                        from PIL import Image
+                        
+                        # Reset file pointer
+                        uploaded_file.seek(0)
+                        image = Image.open(uploaded_file)
+                        
+                        # Extract text using Tesseract (FAST!)
+                        extracted_text = pytesseract.image_to_string(image)
+                        
+                        if extracted_text and extracted_text.strip():
+                            # Success with fast OCR!
+                            pass
                         else:
-                            # If Textract didn't extract text, create descriptive content
-                            extracted_text = f"This is an image titled '{uploaded_file.name}'. The image shows visual content that can be used for learning activities about observation, description, and visual literacy."
-                    else:
-                        extracted_text = f"This is an image titled '{uploaded_file.name}'. The image contains visual elements for educational discussion and learning."
+                            # No text found, try AWS Textract as fallback
+                            raise Exception("No text found with Tesseract")
+                            
+                    except ImportError:
+                        # Tesseract not available, use AWS Textract
+                        file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                        if file_key:
+                            aws_text = extract_text_from_s3(file_key)
+                            if aws_text and aws_text.strip():
+                                extracted_text = aws_text
+                            else:
+                                extracted_text = f"This is an image titled '{uploaded_file.name}'. The image shows visual content for learning activities."
+                        else:
+                            extracted_text = f"This is an image titled '{uploaded_file.name}'. Visual content for educational discussion."
+                    except Exception as e:
+                        # Tesseract failed, try AWS Textract
+                        file_key = upload_to_s3(uploaded_file, st.session_state.student_id)
+                        if file_key:
+                            aws_text = extract_text_from_s3(file_key)
+                            if aws_text and aws_text.strip():
+                                extracted_text = aws_text
+                            else:
+                                extracted_text = f"This is an image titled '{uploaded_file.name}'. Visual content for learning."
+                        else:
+                            extracted_text = f"This is an image titled '{uploaded_file.name}'. Educational visual content."
                 except:
-                    extracted_text = f"This is an image titled '{uploaded_file.name}'. Visual content for educational activities."
+                    extracted_text = f"This is an image titled '{uploaded_file.name}'. Visual content for activities."
         
         except Exception as e:
             # Final fallback - create basic content
