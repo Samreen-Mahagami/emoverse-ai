@@ -3553,12 +3553,20 @@ def teacher_interface():
             # Center the Generate Lesson Plan button
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
-                generate_button = st.button("Generate Lesson Plan", use_container_width=True)
+                # Check if currently processing
+                is_generating = st.session_state.get('generating_lesson_plan', False)
+                generate_button = st.button(
+                    "Generate Lesson Plan", 
+                    use_container_width=True,
+                    disabled=is_generating
+                )
             
             if generate_button:
                 if not uploaded_file:
                     st.error("📎 Please upload a file first to generate a lesson plan!")
                 else:
+                    # Set processing flag
+                    st.session_state.generating_lesson_plan = True
                     # Process the uploaded file to extract content
                     with st.spinner("📖 Analyzing your uploaded content..."):
                         try:
@@ -3598,10 +3606,15 @@ def teacher_interface():
                                 display_lesson_plan(lesson_plan)
                             else:
                                 st.error("❌ Failed to generate lesson plan. Please try again.")
+                            
+                            # Reset processing flag
+                            st.session_state.generating_lesson_plan = False
                                 
                         except Exception as e:
                             st.error(f"❌ Error processing file: {str(e)}")
                             st.info("💡 Please try uploading a different file or check the file format.")
+                            # Reset processing flag on error
+                            st.session_state.generating_lesson_plan = False
         
         with tab2:
             st.header("Student Analytics Dashboard")
