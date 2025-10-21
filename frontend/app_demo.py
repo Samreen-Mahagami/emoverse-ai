@@ -1270,19 +1270,18 @@ def generate_quiz_direct(text, grade_level):
         # Create isolated client for this user session
         bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
         
-        # Grade-specific instructions
+        # Grade-specific instructions - all grades get 20 questions (5 of each type)
+        num_questions = "20 questions (5 multiple choice, 5 true/false, 5 fill blank, 5 match pair)"
+        
         if grade_level <= 4:
             complexity = "very simple, short questions with easy vocabulary"
-            num_questions = "10 questions (3 multiple choice, 3 true/false, 2 fill blank, 2 match pair)"
-            vocab_level = "Use simple words a young child can understand. Keep questions short (1 sentence)."
+            vocab_level = "Use simple words a young child can understand. Keep questions short (1 sentence). Use basic concepts."
         elif grade_level <= 7:
             complexity = "moderate difficulty with age-appropriate vocabulary"
-            num_questions = "15 questions (4 multiple choice, 4 true/false, 4 fill blank, 3 match pair)"
-            vocab_level = "Use clear language appropriate for middle elementary students."
+            vocab_level = "Use clear language appropriate for middle elementary students. Include some reasoning."
         else:
             complexity = "challenging questions with advanced vocabulary"
-            num_questions = "20 questions (5 multiple choice, 5 true/false, 5 fill blank, 5 match pair)"
-            vocab_level = "Use grade-appropriate academic vocabulary."
+            vocab_level = "Use grade-appropriate academic vocabulary. Include critical thinking and analysis."
         
         prompt = f"""CRITICAL: Create quiz questions based ONLY on the ACTUAL CONTENT provided below. 
 DO NOT use generic questions. Every question MUST reference specific details from THIS document.
