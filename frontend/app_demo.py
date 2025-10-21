@@ -1367,7 +1367,7 @@ IMPORTANT: Create exactly 5 questions of EACH type (20 total). Mix them througho
             modelId='arn:aws:bedrock:us-east-1:089580247707:inference-profile/global.anthropic.claude-sonnet-4-5-20250929-v1:0',
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 1500,
+                "max_tokens": 3000,
                 "messages": [{
                     "role": "user",
                     "content": prompt
@@ -1393,13 +1393,16 @@ IMPORTANT: Create exactly 5 questions of EACH type (20 total). Mix them througho
                 return quiz_data
             else:
                 # Only fallback if quiz is completely empty
+                print(f"WARNING: Claude returned empty quiz, using fallback")
                 return create_content_specific_quiz(text, grade_level)
         except Exception as parse_error:
             # Create content-specific quiz based on the actual text
+            print(f"WARNING: Could not parse Claude quiz response: {str(parse_error)}")
+            print(f"Claude response preview: {quiz_text[:500]}")
             return create_content_specific_quiz(text, grade_level)
     except Exception as e:
-        st.error(f"Error generating quiz: {str(e)}")
-        return None
+        print(f"ERROR: Bedrock call failed: {str(e)}")
+        return create_content_specific_quiz(text, grade_level)
 
 def generate_story_direct(text, grade_level):
     """Generate story directly using Bedrock with multi-user support"""
