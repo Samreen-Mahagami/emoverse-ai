@@ -415,19 +415,19 @@ st.markdown("""
         padding: 50px 60px !important;
         font-size: 3.8em !important;
         height: 180px !important;
-        border-radius: 20px !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2) !important;
         transition: all 0.3s ease !important;
         font-weight: 800 !important;
         min-width: 300px !important;
     }
     
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #FF6B9D 0%, #FFA07A 50%, #FFD700 100%) !important;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
     }
     
     .stButton > button[kind="secondary"] {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #43e97b 100%) !important;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
     }
     
     .stButton > button[kind="primary"]:hover,
