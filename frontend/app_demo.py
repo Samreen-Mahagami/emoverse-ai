@@ -753,8 +753,8 @@ def extract_text_from_s3(file_key):
         
         job_id = response['JobId']
         
-        # Poll for completion with progress
-        max_attempts = 20  # 20 attempts * 2 seconds = 40 seconds max
+        # Poll for completion with progress - increased for better success rate
+        max_attempts = 45  # 45 attempts * 2 seconds = 90 seconds max
         for attempt in range(max_attempts):
             time_module.sleep(2)
             
