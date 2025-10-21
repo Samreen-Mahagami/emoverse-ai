@@ -100,7 +100,7 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
     
-    /* Enhanced Button Styling - Consistent for all buttons */
+    /* Enhanced Button Styling - Consistent for all buttons - Updated v2 */
     .stButton > button {
         padding: 20px 35px !important;
         font-size: 2.2em !important;
