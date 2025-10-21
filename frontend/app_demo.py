@@ -189,6 +189,15 @@ st.markdown("""
         box-shadow: 0 0 10px rgba(74, 144, 226, 0.3) !important;
     }
     
+    /* Hide "Press Enter to apply" hint */
+    .stTextInput > div > div > div[data-baseweb="input"] > div:last-child {
+        display: none !important;
+    }
+    
+    .stTextInput [data-testid="InputInstructions"] {
+        display: none !important;
+    }
+    
     /* Colorful headers - Slightly larger */
     h1 {
         color: #ffffff !important;
@@ -2059,7 +2068,7 @@ def student_interface():
                     st.session_state.grade_level = grade_level
                     st.rerun()
                 else:
-                    st.error("Please enter a Student ID")
+                    st.error("Please enter your name or ID")
             
             if st.button("⬅️ Back to Main Menu", use_container_width=True, key="student_back_btn"):
                 st.session_state.user_type = None
@@ -3534,7 +3543,7 @@ def teacher_interface():
                     st.session_state.teacher_id = teacher_id_input
                     st.rerun()
                 else:
-                    st.error("Please enter a Teacher ID")
+                    st.error("Please enter your name or ID")
             
             if st.button("⬅️ Back to Main Menu", use_container_width=True, key="teacher_back_btn"):
                 st.session_state.user_type = None
