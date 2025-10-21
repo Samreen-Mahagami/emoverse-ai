@@ -1378,24 +1378,12 @@ IMPORTANT: Create exactly 5 questions of EACH type (20 total). Mix them througho
             
             quiz_data = json.loads(quiz_text)
             
-            # Validate that the quiz is content-specific (not generic)
-            if quiz_data and 'questions' in quiz_data:
-                questions = quiz_data['questions']
-                # Check if questions seem generic vs content-specific
-                generic_indicators = ['educational content', 'this text', 'the content', 'learning material']
-                content_specific_count = 0
-                
-                for q in questions[:5]:  # Check first 5 questions
-                    question_text = q.get('question', '').lower()
-                    if not any(indicator in question_text for indicator in generic_indicators):
-                        content_specific_count += 1
-                
-                # If most questions seem content-specific, use AI quiz
-                if content_specific_count >= 3:
-                    return quiz_data
-            
-            # Fallback to content-specific quiz if AI generated generic questions
-            return create_content_specific_quiz(text, grade_level)
+            # Return the AI-generated quiz directly (trust Claude's output)
+            if quiz_data and 'questions' in quiz_data and len(quiz_data['questions']) > 0:
+                return quiz_data
+            else:
+                # Only fallback if quiz is completely empty
+                return create_content_specific_quiz(text, grade_level)
         except Exception as e:
             # Create content-specific quiz based on the actual text
             return create_content_specific_quiz(text, grade_level)
