@@ -423,11 +423,11 @@ st.markdown("""
     }
     
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #7CB342 0%, #FFF59D 100%) !important;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
     }
     
     .stButton > button[kind="secondary"] {
-        background: linear-gradient(135deg, #9CCC65 0%, #F9FBE7 100%) !important;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
     }
     
     .stButton > button[kind="primary"]:hover,
