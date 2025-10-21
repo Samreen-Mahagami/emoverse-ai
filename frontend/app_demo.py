@@ -36,9 +36,9 @@ st.set_page_config(
 # Custom CSS for fun, colorful design
 st.markdown("""
 <style>
-    /* Main background with gradient - Purple to Pink Theme */
+    /* Main background with gradient - Nature Theme: Sage Green → Yellow → Teal → Green → Yellow */
     .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #667eea 100%);
+        background: linear-gradient(135deg, #8FBC8F 0%, #F0E68C 25%, #20B2AA 50%, #7CB342 75%, #F0E68C 100%);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
     }
@@ -73,7 +73,7 @@ st.markdown("""
     }
     
     .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #667eea 100%) !important;
+        background: linear-gradient(135deg, #8FBC8F 0%, #F0E68C 25%, #20B2AA 50%, #7CB342 75%, #F0E68C 100%) !important;
         background-size: 400% 400% !important;
         animation: gradient 15s ease infinite !important;
     }
@@ -81,7 +81,7 @@ st.markdown("""
     /* Enhanced File Uploader Styling */
     .stFileUploader > div > div > div > div {
         padding: 25px !important;
-        border: 3px dashed #4A90E2 !important;
+        border: 3px dashed #7CB342 !important;
         border-radius: 15px !important;
         background: rgba(255, 255, 255, 0.9) !important;
         min-height: 120px !important;
@@ -90,7 +90,7 @@ st.markdown("""
     .stFileUploader > div > div > div > div > div {
         font-size: 1.3em !important;
         font-weight: 600 !important;
-        color: #4A90E2 !important;
+        color: #7CB342 !important;
     }
     
     .stFileUploader label {
@@ -185,8 +185,8 @@ st.markdown("""
     }
     
     .stTextInput input:focus {
-        border-color: #4A90E2 !important;
-        box-shadow: 0 0 10px rgba(74, 144, 226, 0.3) !important;
+        border-color: #7CB342 !important;
+        box-shadow: 0 0 10px rgba(124, 179, 66, 0.3) !important;
     }
     
     /* Hide "Press Enter to apply" hint */
@@ -306,7 +306,7 @@ st.markdown("""
     
     /* Sidebar styling - Normal scrolling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #4A90E2 0%, #FF6B6B 100%);
+        background: linear-gradient(180deg, #7CB342 0%, #20B2AA 100%);
         border-radius: 0 20px 20px 0;
     }
     
@@ -387,14 +387,14 @@ st.markdown("""
     }
     
     .stButton > button {
-        background: linear-gradient(135deg, #4A90E2 0%, #FF6B6B 100%);
+        background: linear-gradient(135deg, #7CB342 0%, #F0E68C 100%);
         color: white;
         border: none;
         border-radius: 8px;
         padding: 16px 32px;
         font-size: 1.2rem;
         font-weight: 700;
-        box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+        box-shadow: 0 4px 15px rgba(124, 179, 66, 0.3);
         transition: all 0.3s ease;
         cursor: pointer;
         line-height: 1.5;
@@ -423,11 +423,11 @@ st.markdown("""
     }
     
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+        background: linear-gradient(135deg, #7CB342 0%, #F0E68C 100%) !important;
     }
     
     .stButton > button[kind="secondary"] {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+        background: linear-gradient(135deg, #7CB342 0%, #F0E68C 100%) !important;
     }
     
     .stButton > button[kind="primary"]:hover,
@@ -440,7 +440,7 @@ st.markdown("""
     .stTextInput > div > div > input,
     .stTextArea > div > div > textarea {
         border-radius: 15px;
-        border: 2px solid #4A90E2;
+        border: 2px solid #7CB342;
         padding: 12px;
         font-size: 1.1rem;
         line-height: 1.5;
@@ -463,8 +463,8 @@ st.markdown("""
         padding: 12px 18px;
         font-size: 0.95rem;
         font-weight: 600;
-        color: #4A90E2;
-        border: 2px solid #4A90E2;
+        color: #7CB342;
+        border: 2px solid #7CB342;
         line-height: 1.5;
         white-space: nowrap;
         flex-shrink: 1;
@@ -472,7 +472,7 @@ st.markdown("""
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #4A90E2 0%, #FF6B6B 100%);
+        background: linear-gradient(135deg, #7CB342 0%, #20B2AA 100%);
         color: white !important;
     }
     
@@ -1983,7 +1983,7 @@ def main():
             </h1>
             <p style='color: #ffffff; font-size: 1.6em; margin: 0; font-weight: 500;
                       text-shadow: 1px 1px 4px rgba(0,0,0,0.4);'>
-                Personalized Social-Emotional Learning with AI ✨
+                ✨ Personalized Social-Emotional Learning with AI ✨
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -2002,7 +2002,7 @@ def main():
                             display: inline-block;'>
                     <h2 style='color: #ffffff; font-size: 2.5em; margin: 0;
                                font-weight: 700; text-shadow: 2px 2px 6px rgba(0,0,0,0.4);'>
-                        ✨ Choose Your Learning Journey
+                         Choose Your Learning Journey
                     </h2>
                 </div>
             </div>
