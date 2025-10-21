@@ -36,9 +36,9 @@ st.set_page_config(
 # Custom CSS for fun, colorful design
 st.markdown("""
 <style>
-    /* Main background with gradient - Vibrant Rainbow Theme */
+    /* Main background with gradient - Soft Sky Blue Theme */
     .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 40%, #4facfe 60%, #00f2fe 80%, #43e97b 100%);
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 25%, #fbc2eb 50%, #a6c1ee 75%, #fbc2eb 100%);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
     }
@@ -81,7 +81,7 @@ st.markdown("""
     /* Enhanced File Uploader Styling */
     .stFileUploader > div > div > div > div {
         padding: 25px !important;
-        border: 3px dashed #FF6B9D !important;
+        border: 3px dashed #6B9BD1 !important;
         border-radius: 15px !important;
         background: rgba(255, 255, 255, 0.95) !important;
         min-height: 120px !important;
@@ -90,7 +90,7 @@ st.markdown("""
     .stFileUploader > div > div > div > div > div {
         font-size: 1.3em !important;
         font-weight: 600 !important;
-        color: #FF1493 !important;
+        color: #4A90E2 !important;
     }
     
     .stFileUploader label {
@@ -185,8 +185,8 @@ st.markdown("""
     }
     
     .stTextInput input:focus {
-        border-color: #FF6B9D !important;
-        box-shadow: 0 0 10px rgba(255, 107, 157, 0.4) !important;
+        border-color: #6B9BD1 !important;
+        box-shadow: 0 0 10px rgba(107, 155, 209, 0.4) !important;
     }
     
     /* Hide "Press Enter to apply" hint */
@@ -306,7 +306,7 @@ st.markdown("""
     
     /* Sidebar styling - Normal scrolling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        background: linear-gradient(180deg, #6B9BD1 0%, #A8D5E2 50%, #FED6E3 100%);
         border-radius: 0 20px 20px 0;
     }
     
@@ -387,14 +387,14 @@ st.markdown("""
     }
     
     .stButton > button {
-        background: linear-gradient(135deg, #FF6B9D 0%, #FFA07A 100%);
+        background: linear-gradient(135deg, #6B9BD1 0%, #A8D5E2 100%);
         color: white;
         border: none;
         border-radius: 12px;
         padding: 16px 32px;
         font-size: 1.2rem;
         font-weight: 700;
-        box-shadow: 0 5px 20px rgba(255, 107, 157, 0.4);
+        box-shadow: 0 5px 20px rgba(107, 155, 209, 0.4);
         transition: all 0.3s ease;
         cursor: pointer;
         line-height: 1.5;
@@ -406,7 +406,7 @@ st.markdown("""
     
     .stButton > button:hover {
         transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 8px 25px rgba(255, 107, 157, 0.5);
+        box-shadow: 0 8px 25px rgba(107, 155, 209, 0.5);
     }
     
     /* User selection buttons - clean and aligned */
@@ -440,7 +440,7 @@ st.markdown("""
     .stTextInput > div > div > input,
     .stTextArea > div > div > textarea {
         border-radius: 15px;
-        border: 2px solid #FF6B9D;
+        border: 2px solid #6B9BD1;
         padding: 12px;
         font-size: 1.1rem;
         line-height: 1.5;
@@ -463,8 +463,8 @@ st.markdown("""
         padding: 12px 18px;
         font-size: 0.95rem;
         font-weight: 600;
-        color: #FF1493;
-        border: 2px solid #FF6B9D;
+        color: #4A90E2;
+        border: 2px solid #6B9BD1;
         line-height: 1.5;
         white-space: nowrap;
         flex-shrink: 1;
@@ -472,7 +472,7 @@ st.markdown("""
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #FF6B9D 0%, #FFA07A 100%);
+        background: linear-gradient(135deg, #6B9BD1 0%, #A8D5E2 100%);
         color: white !important;
     }
     
@@ -2085,7 +2085,7 @@ def student_interface():
         
         # Student info banner
         st.markdown(f"""
-            <div style='background: linear-gradient(135deg, #FF6B9D 0%, #FFA07A 50%, #FFD700 100%); 
+            <div style='background: linear-gradient(135deg, #6B9BD1 0%, #A8D5E2 100%); 
                         padding: 15px; border-radius: 15px; text-align: center; 
                         color: white; font-size: 1.1em; margin-bottom: 20px;
                         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
@@ -2096,13 +2096,13 @@ def student_interface():
         
         # Enhanced file upload section with larger layout
         st.markdown("""
-            <div style='background: linear-gradient(135deg, #FFB6C1 0%, #FFE4B5 50%, #E0BBE4 100%); 
+            <div style='background: linear-gradient(135deg, #E3F2FD 0%, #FFF0F5 50%, #F3E5F5 100%); 
                         padding: 35px; border-radius: 25px; text-align: center;
                         box-shadow: 0 12px 40px rgba(0,0,0,0.15); margin: 30px 0;'>
-                <div style='font-size: 2.2em; color: #8B008B; font-weight: bold; margin-bottom: 15px;'>
+                <div style='font-size: 2.2em; color: #1976D2; font-weight: bold; margin-bottom: 15px;'>
                     📚 Upload Your Learning Material
                 </div>
-                <div style='font-size: 1.4em; color: #FF1493; line-height: 1.5;'>
+                <div style='font-size: 1.4em; color: #4A90E2; line-height: 1.5;'>
                     Share your learning material and get fun stories, quizzes, and activities! ✨
                 </div>
             </div>
