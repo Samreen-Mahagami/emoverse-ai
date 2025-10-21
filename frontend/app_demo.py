@@ -1974,16 +1974,15 @@ def main():
                     background: rgba(255, 255, 255, 0.1); 
                     border-radius: 25px; 
                     backdrop-filter: blur(10px);
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-                    background: rgba(255, 255, 255, 0.95) !important;'>
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
             <h1 style='font-size: 4.5em; font-weight: 900; margin: 0 0 15px 0;
-                       color: #2d3748;
-                       text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+                       color: #ffffff;
+                       text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
                        letter-spacing: 2px;'>
                 🌈 Welcome to EmoVerse AI 🚀
             </h1>
-            <p style='color: #4a5568; font-size: 1.6em; margin: 0; font-weight: 600;
-                      text-shadow: none;'>
+            <p style='color: #ffffff; font-size: 1.6em; margin: 0; font-weight: 500;
+                      text-shadow: 1px 1px 4px rgba(0,0,0,0.4);'>
                 Personalized Social-Emotional Learning with AI ✨
             </p>
         </div>
@@ -1996,13 +1995,13 @@ def main():
         # Enhanced "Who Are You?" section
         st.markdown("""
             <div style='text-align: center; margin: 30px 0 50px 0;'>
-                <div style='background: rgba(255, 255, 255, 0.95); 
+                <div style='background: rgba(255, 255, 255, 0.15); 
                             padding: 25px; border-radius: 20px; 
                             backdrop-filter: blur(10px);
                             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
                             display: inline-block;'>
-                    <h2 style='color: #2d3748; font-size: 2.5em; margin: 0;
-                               font-weight: 700; text-shadow: none;'>
+                    <h2 style='color: #ffffff; font-size: 2.5em; margin: 0;
+                               font-weight: 700; text-shadow: 2px 2px 6px rgba(0,0,0,0.4);'>
                         ✨ Choose Your Learning Journey
                     </h2>
                 </div>
