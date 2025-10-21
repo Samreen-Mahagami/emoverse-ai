@@ -1285,6 +1285,10 @@ def create_content_specific_quiz(text, grade_level):
 def generate_quiz_direct(text, grade_level):
     """Generate quiz directly using Bedrock with multi-user support"""
     try:
+        # Debug: Show text preview
+        text_preview = text[:200] if text else "[EMPTY]"
+        st.info(f"📝 Generating quiz from text ({len(text)} chars): {text_preview}...")
+        
         import boto3
         # Create isolated client for this user session
         bedrock = boto3.client('bedrock-runtime', region_name=AWS_REGION)
@@ -1390,12 +1394,15 @@ IMPORTANT: Create exactly 5 questions of EACH type (20 total). Mix them througho
             
             # Return the AI-generated quiz directly (trust Claude's output)
             if quiz_data and 'questions' in quiz_data and len(quiz_data['questions']) > 0:
+                st.success(f"✅ Generated {len(quiz_data['questions'])} AI questions from your document!")
                 return quiz_data
             else:
                 # Only fallback if quiz is completely empty
+                st.warning("⚠️ AI returned empty quiz, using fallback")
                 return create_content_specific_quiz(text, grade_level)
-        except Exception as e:
+        except Exception as parse_error:
             # Create content-specific quiz based on the actual text
+            st.warning(f"⚠️ Could not parse AI quiz (JSON error), using fallback: {str(parse_error)[:100]}")
             return create_content_specific_quiz(text, grade_level)
     except Exception as e:
         st.error(f"Error generating quiz: {str(e)}")
@@ -2539,10 +2546,17 @@ def generate_ai_content(text):
             
             # Quiz generation
             try:
+                # Debug: Check text length
+                if len(text.strip()) < 50:
+                    st.warning(f"⚠️ Warning: Very short text for quiz generation ({len(text)} chars)")
+                
                 quiz = generate_quiz_direct(text, st.session_state.grade_level)
                 if quiz:
                     st.session_state.direct_quiz = quiz
+                else:
+                    st.warning("⚠️ Quiz generation returned None")
             except Exception as e:
+                st.error(f"❌ Quiz generation error: {str(e)}")
                 if attempt == max_retries - 1:
                     st.session_state.quiz_error = str(e)
             
