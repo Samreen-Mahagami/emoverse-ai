@@ -2043,7 +2043,7 @@ def student_interface():
         
         col1, col2, col3 = st.columns([1.5, 2, 1.5])
         with col2:
-            student_id_input = st.text_input("Enter Student ID", key="student_id_input")
+            student_id_input = st.text_input("Enter Student ID", key="student_id_input", label_visibility="visible")
             grade_level = st.selectbox("Select Grade Level", range(1, 11), key="grade_select")
             
             st.markdown("<br>", unsafe_allow_html=True)
@@ -3515,7 +3515,7 @@ def teacher_interface():
         
         col1, col2, col3 = st.columns([1.5, 2, 1.5])
         with col2:
-            teacher_id_input = st.text_input("Teacher ID", key="teacher_id_input")
+            teacher_id_input = st.text_input("Teacher ID", key="teacher_id_input", label_visibility="visible")
             
             st.markdown("<br>", unsafe_allow_html=True)
             
@@ -3637,7 +3637,7 @@ def teacher_interface():
         with tab2:
             st.header("Student Analytics Dashboard")
             
-            student_id = st.text_input("Enter Student ID to view analytics")
+            student_id = st.text_input("Enter Student ID to view analytics", label_visibility="visible")
             
             # Center the Load Analytics button
             col1, col2, col3 = st.columns([1, 2, 1])
