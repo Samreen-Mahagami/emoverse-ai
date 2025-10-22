@@ -508,9 +508,9 @@ python3 test_async_api.py
 
 ## 📞 Links
 
-- **Live Demo:** https://emoverse-ai.streamlit.app
+
 - **GitHub:** https://github.com/your-username/emoverse-ai
-- **Video Demo:** [YouTube Link]
+- **Video Demo:** https://www.youtube.com/watch?v=hGJQb3VhtJ4
 - **Documentation:** Complete in repository
 
 ---
@@ -529,6 +529,6 @@ MIT License - Open source for educational use
 
 **Built for AWS AI Agent Global Hackathon 2025** 🏆
 
-**Powered by AWS Bedrock, Lambda, and AI Services** 🚀
+**Powered by AWS Bedrock,AWS Bedrock AgentCore,AWS GenAI, Lambda, and Amazon Q Services** 🚀
 
 **Making Social-Emotional Learning Accessible to All** ❤️
