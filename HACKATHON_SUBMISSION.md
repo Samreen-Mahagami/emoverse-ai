@@ -451,7 +451,6 @@ Total: $55-60/month
 emoverse-ai/
 ├── frontend/
 │   ├── app_demo.py              # Beautiful Streamlit UI
-│   ├── Dockerfile               # Container for ECS
 │   └── requirements.txt         # Dependencies
 ├── backend/
 │   ├── lambdas/                 # 10 Lambda functions
@@ -496,8 +495,7 @@ sam deploy
 # Go to https://share.streamlit.io/
 # Deploy frontend/app_demo.py
 
-# Option 2: ECS Fargate
-./deploy_serverless_complete.sh
+
 ```
 
 ### Test
