@@ -211,7 +211,7 @@ aws logs tail /aws/lambda/sel-story-generator --follow
 ## 📞 Project Links
 
     GitHub Repository: https://github.com/Samreen-Mahagami/emoverse-ai
-    https://www.youtube.com/watch?v=wttBJOijmTs
+  
     
     
     Video Demo: https://www.youtube.com/watch?v=wttBJOijmTs
