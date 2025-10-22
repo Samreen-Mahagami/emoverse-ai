@@ -509,7 +509,7 @@ python3 test_async_api.py
 ## 📞 Links
 
 
-- **GitHub:** https://github.com/your-username/emoverse-ai
+- **GitHub:** https://github.com/Samreen-Mahagami/emoverse-ai
 - **Video Demo:** https://www.youtube.com/watch?v=hGJQb3VhtJ4
 - **Documentation:** Complete in repository
 
