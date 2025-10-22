@@ -175,7 +175,7 @@ Tier 1: Direct Bedrock → Tier 2: Smart Regen (LTM) → Tier 3: Playwright Exte
 ## 📞 Project Links
 
 - **GitHub Repository:** https://github.com/Samreen-Mahagami/emoverse-ai
-- **Video Demo:** https://www.youtube.com/watch?v=hGJQb3VhtJ4
+- **Video Demo:** https://youtu.be/wttBJOijmTs?si=PrjJAP2-QsUcaNP4
 
 
 ---
