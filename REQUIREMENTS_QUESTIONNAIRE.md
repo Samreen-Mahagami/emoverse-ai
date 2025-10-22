@@ -164,7 +164,7 @@ Blurry PDFs, controversial SEL topics
 ## 5. Data and Content Handling
 
 **46. What types of input data will be used?**  
-SEL PDFs like "Grade 1 SEL_Chapter 1.pdf"
+SEL PDFs like "Grade.pdf"
 
 **47. What data sources are available?**  
 Internal PDFs, external websites for SEL alternatives
