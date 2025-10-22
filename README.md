@@ -95,7 +95,7 @@ Visit `http://localhost:8501` to access the platform!
 
 ## 🛠️ Technology Stack
 
-**AWS Services**: Lambda, S3, Textract, Comprehend, Bedrock, DynamoDB, SNS, SQS, API Gateway
+**AWS Services**: Lambda, S3, Textract, Comprehend, Bedrock, DynamoDB, API Gateway
 
 **AI/ML**: Claude Sonnet 4.5 (via Bedrock), Playwright for web automation
 
