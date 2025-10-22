@@ -87,7 +87,7 @@ Visit `http://localhost:8501` to access the platform!
 | Document | Description |
 |----------|-------------|
 | [docs/QUICKSTART.md](docs/QUICKSTART.md) | Get started in 5 minutes |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Detailed system architecture |
+| [EmoVerse-AI_Architecture_Diagram.png](https://github.com/Samreen-Mahagami/emoverse-ai/blob/426cc20871608bc2a3850661387f1a311e86364d/EmoVerse-AI_Architecture_Diagram.png) | Detailed system architecture |
 | [COMPLETE_SYSTEM_FLOW.md](COMPLETE_SYSTEM_FLOW.md) | Complete workflows and system flow |
 | [COMPLETE_SERVERLESS_GUIDE.md](COMPLETE_SERVERLESS_GUIDE.md) | Deployment guide with cost breakdown |
 | [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md) | Complete feature documentation |
@@ -219,13 +219,6 @@ MIT License - See LICENSE file for details
 
 Built for the SEL AI Hackathon to support children's mental health and emotional intelligence development.
 
-## 📞 Support & Documentation
-
-- **Quick Start:** See [docs/QUICKSTART.md](docs/QUICKSTART.md) for getting started
-- **Deployment:** See [COMPLETE_SERVERLESS_GUIDE.md](COMPLETE_SERVERLESS_GUIDE.md) for deployment instructions
-- **Architecture:** See [ARCHITECTURE.md](ARCHITECTURE.md) for system design details
-- **Workflows:** See [COMPLETE_SYSTEM_FLOW.md](COMPLETE_SYSTEM_FLOW.md) for detailed workflows
-- **Debugging:** Review AWS CloudWatch logs for troubleshooting
 
 ---
 
