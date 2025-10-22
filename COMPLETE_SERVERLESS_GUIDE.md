@@ -74,12 +74,7 @@ Student/Teacher → Streamlit Frontend (app_demo.py)
 - **Setup:** 5 minutes
 - **Best for:** Quick deployment, demos, hackathons
 
-### Option 2: ECS Fargate (Full AWS Production)
-- **Frontend:** ECS Fargate (serverless containers)
-- **Backend:** AWS Services (complete serverless stack)
-- **Cost:** ~$20-30/month base + usage
-- **Setup:** 30 minutes
-- **Best for:** Enterprise, full AWS control, scalability
+
 
 ---
 
