@@ -12,26 +12,6 @@
 
 **Mission:** Provide accessible, 24/7 mental health support through personalized AI-driven SEL content
 
----
-
-## 💚 Why This Platform Exists
-
-### The Mental Health Crisis
-- **1 in 5 children** experience mental health disorders
-- **Suicide** is 2nd leading cause of death for ages 10-24
-- **School counselor shortage:** 1 per 482 students (should be 1 per 250)
-- **Cost barriers:** Therapy costs $50-200/hour
-- **Wait times:** 6-12 months for appointments
-
-### Who Needs This
-Students with anxiety, depression, ADHD, autism, behavioral disorders, trauma history, low self-esteem, bullying experiences, or in underserved communities without mental health access.
-
-### Our Solution
-✅ 24/7 support when counselors unavailable  
-✅ $0.29/student/month vs. $50-200/hour therapy  
-✅ Early intervention through pattern detection  
-✅ Trauma-informed, evidence-based approach  
-✅ Scalable to thousands of students  
 
 ---
 
@@ -198,16 +178,6 @@ Tier 1: Direct Bedrock → Tier 2: Smart Regen (LTM) → Tier 3: Playwright Exte
 - **Video Demo:** https://www.youtube.com/watch?v=hGJQb3VhtJ4
 
 
-### 📚 Documentation Available in Repository:
-- **README.md** - Project overview and quick start
-- **PROJECT_DESCRIPTION.md** - This file (complete feature documentation)
-- **ARCHITECTURE.md** - System architecture and design
-- **architecture_diagram.png** - Visual architecture diagram (EmoVerse AI Multi-Tier System)
-- **COMPLETE_SYSTEM_FLOW.md** - Detailed workflow diagrams
-- **COMPLETE_SERVERLESS_GUIDE.md** - Deployment guide
-- **HACKATHON_SUBMISSION.md** - Hackathon-specific details
-- **docs/** folder - Additional guides and documentation
-
 ---
 
 ## 👤 Creator
@@ -218,7 +188,5 @@ Agentic AI Specialist | Building autonomous AI agents with Amazon Bedrock & Agen
 ---
 
 **EmoVerse AI - Your AI Universe of Emotional Learning**
-
-**Supporting children's mental health, one personalized learning experience at a time.** 💚🌈
 
 **Built for AWS AI Agent Global Hackathon 2025** 🏆
