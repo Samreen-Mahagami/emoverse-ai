@@ -92,7 +92,6 @@ Tier 1: Direct Bedrock → Tier 2: Smart Regen (LTM) → Tier 3: Playwright Exte
 
 ### Frontend
 - Streamlit (Python)
-- Deployed on Streamlit Cloud (FREE) or AWS ECS Fargate
 
 ---
 
@@ -151,7 +150,6 @@ Tier 1: Direct Bedrock → Tier 2: Smart Regen (LTM) → Tier 3: Playwright Exte
 - **⚡ 10-Second Processing:** Optimize from 30s to under 10s
 - **👨‍👩‍👧 Parent Dashboard:** Real-time emotional progress visibility
 - **🎤 Voice Chatbot:** AWS Transcribe + Polly for hands-free interaction (especially for young children, dyslexia, autism)
-- **📱 Mobile Apps:** iOS/Android
 - **🌍 Multi-Language:** Spanish, Mandarin, etc.
 - **🎮 Gamification:** Increased engagement
 - **🔗 LMS Integration:** Canvas, Google Classroom
