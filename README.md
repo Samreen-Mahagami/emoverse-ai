@@ -86,7 +86,6 @@ Visit `http://localhost:8501` to access the platform!
 
 | Document | Description |
 |----------|-------------|
-| [docs/QUICKSTART.md](docs/QUICKSTART.md) | Get started in 5 minutes |
 | [EmoVerse-AI_Architecture_Diagram.png](https://github.com/Samreen-Mahagami/emoverse-ai/blob/426cc20871608bc2a3850661387f1a311e86364d/EmoVerse-AI_Architecture_Diagram.png) | Detailed system architecture |
 | [COMPLETE_SYSTEM_FLOW.md](COMPLETE_SYSTEM_FLOW.md) | Complete workflows and system flow |
 | [COMPLETE_SERVERLESS_GUIDE.md](COMPLETE_SERVERLESS_GUIDE.md) | Deployment guide with cost breakdown |
@@ -116,7 +115,7 @@ sel-platform/
 │   │   └── orchestrator.py     # Workflow coordinator
 │   └── lambdas/                # Lambda functions (extracted from zips)
 ├── frontend/
-│   └── app.py                  # Streamlit interface
+│   └── app_demo.py                  # Streamlit interface
 ├── infrastructure/
 │   └── template.yaml           # SAM template
 ├── scripts/                    # Utility scripts
@@ -211,8 +210,6 @@ aws logs tail /aws/lambda/sel-story-generator --follow
 ## 📞 Project Links
 
     GitHub Repository: https://github.com/Samreen-Mahagami/emoverse-ai
-  
-    
     
     Video Demo: https://www.youtube.com/watch?v=wttBJOijmTs
     
@@ -226,7 +223,7 @@ This is a hackathon project for mental health and children's education. Contribu
 
 MIT License - See LICENSE file for details
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 Built for the SEL AI Hackathon to support children's mental health and emotional intelligence development.
 
