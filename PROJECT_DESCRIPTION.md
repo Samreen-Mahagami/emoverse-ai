@@ -194,9 +194,9 @@ Tier 1: Direct Bedrock → Tier 2: Smart Regen (LTM) → Tier 3: Playwright Exte
 
 ## 📞 Project Links
 
-- **GitHub Repository:** [Your GitHub URL]
-- **Live Demo:** [Your Streamlit/ECS URL]
-- **Video Demo:** [YouTube URL - 3 minutes]
+- **GitHub Repository:** https://github.com/Samreen-Mahagami/emoverse-ai
+- **Video Demo:** https://www.youtube.com/watch?v=hGJQb3VhtJ4
+
 
 ### 📚 Documentation Available in Repository:
 - **README.md** - Project overview and quick start
