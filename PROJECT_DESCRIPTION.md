@@ -65,8 +65,6 @@
 - Real-time performance tracking
 - Emotional journey monitoring (crisis indicators, sentiment trends)
 - Engagement metrics (withdrawal patterns)
-- Early intervention alerts for students in crisis
-- Data for IEP/504 plans
 
 ---
 
