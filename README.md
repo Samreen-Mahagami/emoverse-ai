@@ -217,15 +217,11 @@ aws logs tail /aws/lambda/sel-story-generator --follow
 
 ## 🤝 Contributing
 
-This is a hackathon project for mental health and children's education. Contributions welcome!
+The project is for children's education. Contributions welcome!
 
 ## 📄 License
 
 MIT License - See LICENSE file for details
-
-##  Acknowledgments
-
-Built for the SEL AI Hackathon to support children's mental health and emotional intelligence development.
 
 
 ---
